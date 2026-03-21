@@ -1,0 +1,63 @@
+# ===================================================
+# Конфигурация парсинга gkproject.ru
+# Агент "Парсер" — подчинён Тимлиду
+# ===================================================
+
+target:
+  domain: "gkproject.ru"
+  base_url: "https://gkproject.ru"
+  company_name: "ГК Проект"
+
+sources:
+  # --- Главная страница ---
+  - name: "homepage"
+    type: "gkproject"
+    urls:
+      - "https://gkproject.ru/"
+    category: "general"
+
+  # --- Контакты ---
+  - name: "contacts"
+    type: "gkproject"
+    urls:
+      - "https://gkproject.ru/contacts/"
+    category: "contacts"
+
+  # --- Портфолио работ (с пагинацией) ---
+  - name: "portfolio"
+    type: "gkproject"
+    urls:
+      - "https://gkproject.ru/nashi-raboty/"
+      - "https://gkproject.ru/nashi-raboty/?PAGEN_1=2"
+      - "https://gkproject.ru/nashi-raboty/?PAGEN_1=3"
+      - "https://gkproject.ru/nashi-raboty/?PAGEN_1=4"
+      - "https://gkproject.ru/nashi-raboty/?PAGEN_1=5"
+    category: "portfolio"
+
+  # --- Отзывы ---
+  - name: "reviews"
+    type: "gkproject"
+    urls:
+      - "https://gkproject.ru/reviews/"
+      - "https://gkproject.ru/reviews/?PAGEN_1=2"
+    category: "reviews"
+    follow_links: true
+    link_pattern: "/reviews/"
+
+  # --- Блог ---
+  - name: "blog"
+    type: "gkproject"
+    urls:
+      - "https://gkproject.ru/blog/"
+      - "https://gkproject.ru/blog/?PAGEN_1=2"
+      - "https://gkproject.ru/blog/?PAGEN_1=3"
+      - "https://gkproject.ru/blog/?PAGEN_1=4"
+    category: "blog"
+    follow_links: true
+    link_pattern: "/blog/"
+
+settings:
+  delay_seconds: 1.0
+  timeout: 30
+  user_agent: "GKProject-AI-Parser/1.0"
+  max_retries: 3

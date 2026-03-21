@@ -1,0 +1,27 @@
+# Конфигурация обработки данных
+
+processing:
+  chunking:
+    strategy: "recursive"
+    chunk_size: 500
+    chunk_overlap: 50
+    separators:
+      - "\n\n"
+      - "\n"
+      - ". "
+      - " "
+
+  cleaning:
+    remove_html: true
+    remove_extra_whitespace: true
+    min_chunk_length: 50
+    max_chunk_length: 2000
+
+  embeddings:
+    model: "text-embedding-3-small"
+    batch_size: 100
+    dimensions: 1536
+
+  chroma:
+    collection: "ai_sale_knowledge"
+    distance_metric: "cosine"

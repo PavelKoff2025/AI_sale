@@ -1,0 +1,44 @@
+version: "3.9"
+
+services:
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: ""
+        VITE_WS_URL: ""
+    ports:
+      - "80:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+    mem_limit: 64m
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    expose:
+      - "8080"
+    env_file:
+      - .env
+    environment:
+      - CHROMA_HOST=
+      - CHROMA_DATA_DIR=/app/chroma_data
+    volumes:
+      - ./chroma_data:/app/chroma_data
+      - ./logs:/app/logs
+      - ./docs:/app/docs:ro
+    restart: unless-stopped
+    mem_limit: 400m
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 20s
+
+volumes:
+  chroma_data:
