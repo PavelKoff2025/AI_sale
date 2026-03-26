@@ -27,10 +27,12 @@ services:
     environment:
       - CHROMA_HOST=
       - CHROMA_DATA_DIR=/app/chroma_data
+      - GOOGLE_SHEETS_CREDENTIALS_FILE=/app/credentials/google_service_account.json
     volumes:
       - ./chroma_data:/app/chroma_data
       - ./logs:/app/logs
       - ./docs:/app/docs:ro
+      - ./credentials:/app/credentials:ro
     restart: unless-stopped
     mem_limit: 400m
     healthcheck:

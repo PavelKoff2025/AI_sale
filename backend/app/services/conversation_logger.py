@@ -1,6 +1,7 @@
 """
 Система логирования диалогов, заявок и событий.
 Пишет структурированные JSONL-файлы с ежедневной ротацией.
+При включённом GOOGLE_SHEETS_ENABLED дублирует записи в Google Sheets.
 
 Файлы:
   logs/conversations/2026-03-21.jsonl  — диалоги (вопрос + ответ + intent + sources + tokens)
@@ -18,6 +19,14 @@ from app.core.config import settings
 logger = logging.getLogger(__name__)
 
 LOGS_DIR = Path(__file__).resolve().parents[3] / "logs"
+
+
+def _get_sheets_service():
+    try:
+        from app.services.google_sheets_service import google_sheets_service
+        return google_sheets_service
+    except Exception:
+        return None
 
 
 class ConversationLogger:
@@ -61,21 +70,45 @@ class ConversationLogger:
             "model": settings.openai_model,
         })
 
+        sheets = _get_sheets_service()
+        if sheets:
+            sheets.log_conversation(
+                session_id=session_id,
+                user_message=user_message,
+                assistant_message=assistant_message,
+                intent=intent,
+                sources=sources,
+                tokens_used=tokens_used,
+                duration_ms=duration_ms,
+            )
+
     def log_lead(self, lead: dict):
-        self._append("leads", {
+        entry = {
             "lead_id": lead.get("id", ""),
             "name": lead.get("name", ""),
             "phone": lead.get("phone", ""),
             "message": lead.get("message", ""),
             "source": lead.get("source", ""),
             "session_id": lead.get("session_id", ""),
-        })
+        }
+        qualification = lead.get("qualification")
+        if qualification:
+            entry["qualification"] = qualification
+        self._append("leads", entry)
+
+        sheets = _get_sheets_service()
+        if sheets:
+            sheets.log_lead(lead)
 
     def log_event(self, event_type: str, details: dict | None = None):
         self._append("events", {
             "event": event_type,
             "details": details or {},
         })
+
+        sheets = _get_sheets_service()
+        if sheets:
+            sheets.log_event(event_type, details)
 
     def get_today_stats(self) -> dict:
         conversations = self._count_lines("conversations")

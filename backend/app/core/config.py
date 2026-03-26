@@ -48,6 +48,11 @@ class Settings(BaseSettings):
     session_max_messages: int = 20
     session_ttl_seconds: int = 1800
 
+    # Google Sheets
+    google_sheets_enabled: bool = False
+    google_sheets_credentials_file: str = ""
+    google_sheets_spreadsheet_id: str = ""
+
     @property
     def cors_origins_list(self) -> list[str]:
         return [origin.strip() for origin in self.cors_origins.split(",")]

@@ -6,6 +6,8 @@ from fastapi import APIRouter, BackgroundTasks
 
 from app.models.lead import LeadRequest, LeadResponse
 from app.services.conversation_logger import conversation_logger
+from app.services.qualification_service import qualification_service
+from app.services.session_service import session_service
 from app.services.telegram_service import telegram_service
 
 logger = logging.getLogger(__name__)
@@ -13,6 +15,15 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 leads_storage: list[dict] = []
+
+
+async def _enrich_and_notify(lead: dict):
+    """Анализ квалификации + отправка в Telegram (выполняется в background)."""
+    history = session_service.get_history(lead.get("session_id", ""))
+    qualification = await qualification_service.analyze(history)
+    lead["qualification"] = qualification
+    conversation_logger.log_lead(lead)
+    await telegram_service.send_lead_notification(lead)
 
 
 @router.post("/", response_model=LeadResponse)
@@ -30,8 +41,7 @@ async def create_lead(request: LeadRequest, background_tasks: BackgroundTasks):
     leads_storage.append(lead)
     logger.info("New lead: %s — %s (%s)", lead_id, request.name, request.phone)
 
-    conversation_logger.log_lead(lead)
-    background_tasks.add_task(telegram_service.send_lead_notification, lead)
+    background_tasks.add_task(_enrich_and_notify, lead)
 
     return LeadResponse(lead_id=lead_id)
 

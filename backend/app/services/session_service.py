@@ -28,6 +28,10 @@ class SessionService:
         self._sessions[session_id]["last_active"] = time.time()
         self._cleanup_expired()
 
+    def active_sessions_count(self) -> int:
+        self._cleanup_expired()
+        return len(self._sessions)
+
     def _cleanup_expired(self):
         now = time.time()
         expired = [

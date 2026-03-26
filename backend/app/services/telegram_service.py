@@ -69,6 +69,7 @@ class TelegramService:
         source = lead.get("source", "chat_widget")
         created = lead.get("created_at", "")
         lead_id = lead.get("id", "")
+        qualification = lead.get("qualification")
 
         lines = [
             "🔔 <b>Новая заявка с сайта!</b>",
@@ -79,6 +80,35 @@ class TelegramService:
 
         if message:
             lines.append(f"💬 <b>Сообщение:</b> {message}")
+
+        if qualification:
+            temp = qualification.get("lead_temperature", "cold")
+            temp_emoji = {"hot": "🔥", "warm": "🟡", "cold": "🔵"}.get(temp, "⚪")
+            temp_label = {"hot": "ГОРЯЧИЙ", "warm": "ТЁПЛЫЙ", "cold": "ХОЛОДНЫЙ"}.get(
+                temp, temp.upper()
+            )
+
+            lines.extend(["", f"{temp_emoji} <b>Квалификация: {temp_label}</b>", ""])
+
+            param_labels = {
+                "warm_contour": "🏠 Тёплый контур",
+                "budget_ok": "💰 Бюджет от 1,8 млн",
+                "meeting_ready": "📅 Готовность к встрече",
+            }
+            status_icons = {"yes": "✅", "no": "❌", "unknown": "❓"}
+
+            for key, label in param_labels.items():
+                param = qualification.get(key, {})
+                status = param.get("status", "unknown")
+                detail = param.get("detail", "")
+                icon = status_icons.get(status, "❓")
+                lines.append(f"  {icon} {label}")
+                if detail:
+                    lines.append(f"      <i>{detail}</i>")
+
+            summary = qualification.get("summary", "")
+            if summary:
+                lines.extend(["", f"📝 <b>Резюме:</b> {summary}"])
 
         lines.extend([
             "",

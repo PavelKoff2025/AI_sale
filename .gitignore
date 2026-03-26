@@ -38,3 +38,6 @@ chroma_data/
 *.log
 logs/
 !logs/.gitkeep
+
+# Google credentials
+credentials/

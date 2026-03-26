@@ -12,6 +12,13 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
+MAX_WS_CONNECTIONS = 15
+_active_ws: set[str] = set()
+
+
+def get_active_connections_count() -> int:
+    return len(_active_ws)
+
 
 @router.post("/chat", response_model=ChatResponse)
 async def chat(request: ChatRequest):
@@ -44,8 +51,16 @@ async def chat_stream(request: ChatRequest):
 
 
 async def handle_websocket_chat(websocket: WebSocket):
+    if len(_active_ws) >= MAX_WS_CONNECTIONS:
+        await websocket.close(code=1013, reason="Too many connections")
+        logger.warning("WebSocket rejected: limit %d reached", MAX_WS_CONNECTIONS)
+        return
+
     await websocket.accept()
     session_id = str(uuid.uuid4())
+    ws_id = session_id
+    _active_ws.add(ws_id)
+    logger.info("WebSocket connected: %s (active: %d)", ws_id, len(_active_ws))
 
     try:
         while True:
@@ -62,4 +77,7 @@ async def handle_websocket_chat(websocket: WebSocket):
             await websocket.send_json({"type": "done"})
 
     except WebSocketDisconnect:
-        logger.info(f"WebSocket disconnected: {session_id}")
+        logger.info("WebSocket disconnected: %s", session_id)
+    finally:
+        _active_ws.discard(ws_id)
+        logger.info("WebSocket closed: %s (active: %d)", ws_id, len(_active_ws))
