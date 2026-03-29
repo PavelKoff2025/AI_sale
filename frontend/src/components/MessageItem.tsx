@@ -1,5 +1,6 @@
 import type { Message } from "../utils/types";
 import { TypingIndicator } from "./TypingIndicator";
+import { VoicePlayButton } from "./VoicePlayButton";
 
 interface MessageItemProps {
   message: Message;
@@ -55,6 +56,9 @@ export function MessageItem({ message }: MessageItemProps) {
       >
         {isUser ? message.content : renderMessageContent(message.content)}
         {message.isStreaming && !message.content && <TypingIndicator />}
+        {!isUser && message.content && !message.isStreaming && (
+          <VoicePlayButton text={message.content} />
+        )}
       </div>
     </div>
   );

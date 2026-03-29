@@ -13,6 +13,9 @@ class Settings(BaseSettings):
     openai_api_key: str = ""
     openai_model: str = "gpt-4o"
     openai_embedding_model: str = "text-embedding-3-small"
+    # Голос (Whisper + TTS) — тот же API key
+    openai_tts_model: str = "tts-1"
+    openai_tts_voice: str = "nova"
 
     # GigaChat (Sber)
     gigachat_credentials: str = ""

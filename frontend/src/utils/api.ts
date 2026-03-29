@@ -1,6 +1,47 @@
 import type { ChatRequest, ChatResponse } from "./types";
 import { defaultConfig } from "./config";
 
+export async function transcribeVoice(blob: Blob): Promise<string> {
+  const fd = new FormData();
+  fd.append("audio", blob, "voice.webm");
+  const response = await fetch(`${defaultConfig.apiUrl}/api/voice/transcribe`, {
+    method: "POST",
+    body: fd,
+  });
+  if (!response.ok) {
+    let msg = `Ошибка ${response.status}`;
+    try {
+      const err = await response.json();
+      if (typeof err.detail === "string") msg = err.detail;
+      else if (Array.isArray(err.detail)) msg = err.detail.map((d: { msg?: string }) => d.msg).join(", ");
+    } catch {
+      /* ignore */
+    }
+    throw new Error(msg);
+  }
+  const data = (await response.json()) as { text: string };
+  return data.text ?? "";
+}
+
+export async function fetchSpeechAudio(text: string): Promise<Blob> {
+  const response = await fetch(`${defaultConfig.apiUrl}/api/voice/synthesize`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ text }),
+  });
+  if (!response.ok) {
+    let msg = `Ошибка ${response.status}`;
+    try {
+      const err = await response.json();
+      if (typeof err.detail === "string") msg = err.detail;
+    } catch {
+      /* ignore */
+    }
+    throw new Error(msg);
+  }
+  return response.blob();
+}
+
 export async function sendMessage(request: ChatRequest): Promise<ChatResponse> {
   const response = await fetch(`${defaultConfig.apiUrl}/api/chat`, {
     method: "POST",

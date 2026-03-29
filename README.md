@@ -75,6 +75,8 @@ python -m app.main --config configs/sources.yaml
 |-------|-----|----------|
 | POST | `/api/chat` | Отправка сообщения |
 | POST | `/api/chat/stream` | Streaming ответ (SSE) |
+| POST | `/api/voice/transcribe` | Распознавание речи (Whisper, multipart `audio`) |
+| POST | `/api/voice/synthesize` | Озвучка текста (TTS, JSON `{ "text" }` → MP3) |
 | WS | `/ws/chat` | WebSocket чат |
 | GET | `/api/health` | Проверка состояния |
 | GET | `/api/knowledge` | Статистика RAG базы |

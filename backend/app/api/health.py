@@ -3,6 +3,7 @@ from fastapi import APIRouter
 from app.core.config import settings
 from app.services.llm_provider import llm_provider, _llm_semaphore, MAX_CONCURRENT_LLM
 from app.services.session_service import session_service
+from app.services.voice_service import voice_service
 
 router = APIRouter()
 
@@ -29,4 +30,5 @@ async def health_check():
         "websocket_limit": MAX_WS_CONNECTIONS,
         "llm_concurrent": llm_in_use,
         "llm_concurrent_limit": MAX_CONCURRENT_LLM,
+        "voice_enabled": voice_service.enabled,
     }
