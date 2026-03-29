@@ -3,9 +3,10 @@
 Работает при наличии OPENAI_API_KEY (тот же ключ, что и для чата).
 """
 
-import io
 import logging
+import os
 import re
+import tempfile
 
 from app.core.config import settings
 
@@ -45,18 +46,20 @@ def _mime_for_ext(ext: str) -> str:
 def _sniff_audio_format(data: bytes) -> tuple[str, str] | None:
     if len(data) < 16:
         return None
-    if data[:3] == b"ID3" or (data[0] == 0xFF and (data[1] & 0xE0) == 0xE0):
-        return ".mp3", "audio/mpeg"
+    if data[:4] == b"caff":
+        return None
+    if data[:4] == b"\x1aE\xdf\xa3":
+        return ".webm", "audio/webm"
+    if len(data) >= 12 and data[4:8] == b"ftyp":
+        return ".m4a", "audio/mp4"
     if data[:4] == b"RIFF" and data[8:12] == b"WAVE":
         return ".wav", "audio/wav"
     if data[:4] == b"fLaC":
         return ".flac", "audio/flac"
     if data[:4] == b"OggS":
         return ".ogg", "audio/ogg"
-    if len(data) >= 12 and data[4:8] == b"ftyp":
-        return ".m4a", "audio/mp4"
-    if data[:4] == b"\x1aE\xdf\xa3":
-        return ".webm", "audio/webm"
+    if data[:3] == b"ID3" or (data[0] == 0xFF and (data[1] & 0xE0) == 0xE0):
+        return ".mp3", "audio/mpeg"
     return None
 
 
@@ -66,11 +69,22 @@ def normalize_whisper_filename(
     data: bytes,
 ) -> tuple[str, str]:
     """
-    Возвращает (filename, mime) для загрузки в Whisper.
-    Учитывает Content-Type (iPhone часто шлёт audio/mp4) и сигнатуру файла.
+    Имя и MIME для Whisper.
+    Сначала сигнатура файла (браузер часто врёт в Content-Type), затем имя, затем заголовок.
     """
-    ct = (content_type or "").split(";")[0].strip().lower()
+    sniffed = _sniff_audio_format(data)
+    if sniffed:
+        ext, mime = sniffed
+        return f"voice{ext}", mime
 
+    fn = (original_name or "").lower().strip()
+    if fn.endswith(".3gp"):
+        return "voice.mp4", "audio/mp4"
+    for ext in sorted(_WHISPER_EXTS, key=len, reverse=True):
+        if fn.endswith(ext):
+            return f"voice{ext}", _mime_for_ext(ext)
+
+    ct = (content_type or "").split(";")[0].strip().lower()
     if ct in ("audio/webm", "video/webm"):
         return "voice.webm", "audio/webm"
     if ct in ("audio/mp4", "audio/x-m4a", "audio/m4a"):
@@ -83,19 +97,16 @@ def normalize_whisper_filename(
         return "voice.ogg", "audio/ogg"
     if ct in ("audio/flac", "audio/x-flac"):
         return "voice.flac", "audio/flac"
+    if ct == "audio/aac":
+        return "voice.m4a", "audio/mp4"
 
-    fn = (original_name or "").lower().strip()
-    for ext in sorted(_WHISPER_EXTS, key=len, reverse=True):
-        if fn.endswith(ext):
-            return f"voice{ext}", _mime_for_ext(ext)
-
-    sniffed = _sniff_audio_format(data)
-    if sniffed:
-        ext, mime = sniffed
-        return f"voice{ext}", mime
+    if len(data) >= 4 and data[:4] == b"caff":
+        raise ValueError(
+            "Формат CAF (запись с iPhone) Whisper не принимает. Экспортируйте как m4a или mp3."
+        )
 
     raise ValueError(
-        "Формат файла не поддерживается. Запишите в webm, mp3, m4a, wav или ogg."
+        "Формат файла не распознан. Используйте webm, mp3, m4a, wav или ogg."
     )
 
 
@@ -122,14 +133,38 @@ class VoiceService:
     ) -> str:
         if not self._client:
             raise RuntimeError("Voice service not configured")
-        whisper_name, mime = normalize_whisper_filename(filename, content_type, audio_bytes)
-        file_tuple = (whisper_name, io.BytesIO(audio_bytes), mime)
-        result = await self._client.audio.transcriptions.create(
-            model="whisper-1",
-            file=file_tuple,
-            language="ru",
-        )
-        return result.text or ""
+        whisper_name, _mime = normalize_whisper_filename(filename, content_type, audio_bytes)
+        suffix = whisper_name[whisper_name.rfind(".") :] if "." in whisper_name else ".bin"
+        fd, path = tempfile.mkstemp(suffix=suffix)
+        try:
+            with os.fdopen(fd, "wb") as tmp:
+                tmp.write(audio_bytes)
+            with open(path, "rb") as audio_file:
+                try:
+                    from openai import BadRequestError
+
+                    result = await self._client.audio.transcriptions.create(
+                        model="whisper-1",
+                        file=audio_file,
+                        language="ru",
+                    )
+                except BadRequestError as e:
+                    logger.warning(
+                        "Whisper rejected file fn=%s ct=%s head=%s err=%s",
+                        filename,
+                        content_type,
+                        audio_bytes[:32].hex(),
+                        str(e)[:300],
+                    )
+                    raise ValueError(
+                        "Файл не принят распознаванием. Сохраните запись как m4a или mp3 и попробуйте снова."
+                    ) from e
+            return result.text or ""
+        finally:
+            try:
+                os.unlink(path)
+            except OSError:
+                pass
 
     async def synthesize(self, text: str) -> bytes:
         if not self._client:
