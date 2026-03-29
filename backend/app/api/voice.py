@@ -29,9 +29,10 @@ async def transcribe_voice(audio: UploadFile = File(...)):
     if len(data) > 25 * 1024 * 1024:
         raise HTTPException(status_code=400, detail="Файл слишком большой (макс. 25 МБ)")
 
-    filename = audio.filename or "audio.webm"
     try:
-        text = await voice_service.transcribe(data, filename)
+        text = await voice_service.transcribe(data, audio.filename, audio.content_type)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
     except Exception as e:
         logger.exception("Transcription failed")
         raise HTTPException(status_code=502, detail=str(e)[:200]) from e
