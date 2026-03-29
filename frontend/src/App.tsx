@@ -1,6 +1,18 @@
 import { ChatWidget } from "./components/ChatWidget";
 
+/** Встраивание на gkproject.ru (Битрикс): iframe на URL с ?embed=1 или /embed/ */
+function isEmbedMode(): boolean {
+  if (typeof window === "undefined") return false;
+  const q = new URLSearchParams(window.location.search);
+  if (q.get("embed") === "1" || q.get("embed") === "true") return true;
+  return window.location.pathname.replace(/\/$/, "") === "/embed";
+}
+
 export default function App() {
+  if (isEmbedMode()) {
+    return <ChatWidget />;
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
       <nav className="bg-white shadow-sm border-b border-gray-200">
