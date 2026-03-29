@@ -3,7 +3,11 @@ import { defaultConfig } from "./config";
 
 export async function transcribeVoice(blob: Blob): Promise<string> {
   const fd = new FormData();
-  fd.append("audio", blob, "voice.webm");
+  const filename =
+    typeof File !== "undefined" && blob instanceof File && blob.name
+      ? blob.name
+      : "voice.webm";
+  fd.append("audio", blob, filename);
   const response = await fetch(`${defaultConfig.apiUrl}/api/voice/transcribe`, {
     method: "POST",
     body: fd,

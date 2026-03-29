@@ -39,10 +39,6 @@ export function useVoiceRecorder(onTranscript: (text: string) => void) {
   const startRecording = useCallback(async () => {
     setVoiceError(null);
     if (typeof window !== "undefined" && !window.isSecureContext) {
-      setVoiceError(
-        "Микрофон доступен по HTTPS или на localhost. Откройте сайт с защищённым соединением."
-      );
-      setState("error");
       return;
     }
     if (!navigator.mediaDevices?.getUserMedia) {
