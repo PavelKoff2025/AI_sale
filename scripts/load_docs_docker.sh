@@ -1,6 +1,6 @@
 #!/bin/bash
-# Загрузка документов из docs/ в RAG базу через Docker
-# Запуск: cd AI_sale && ./scripts/load_docs_docker.sh
+# Загрузка Markdown в RAG: docs/ и parsing_agent/data/raw/ (через /app/parsing_raw)
+# Запуск из корня репозитория: ./scripts/load_docs_docker.sh
 
 set -e
 
@@ -10,7 +10,6 @@ docker compose exec backend python -c "
 import hashlib, re, os, sys
 from pathlib import Path
 
-# Инициализация
 import chromadb
 from openai import OpenAI
 
@@ -20,61 +19,81 @@ if not api_key:
     sys.exit(1)
 
 openai_client = OpenAI(api_key=api_key)
-chroma = chromadb.HttpClient(host=os.getenv('CHROMA_HOST','chromadb'), port=int(os.getenv('CHROMA_PORT','8000')))
+
+chroma_host = (os.getenv('CHROMA_HOST') or '').strip()
+chroma_port = int(os.getenv('CHROMA_PORT', '8000'))
+chroma_data = os.getenv('CHROMA_DATA_DIR', '/app/chroma_data')
+collection_name = os.getenv('CHROMA_COLLECTION', 'ai_sale_knowledge')
+
+if chroma_host:
+    try:
+        chroma = chromadb.HttpClient(host=chroma_host, port=chroma_port)
+        chroma.heartbeat()
+    except Exception as e:
+        print(f'Chroma HttpClient failed ({e}), using PersistentClient at {chroma_data}')
+        chroma = chromadb.PersistentClient(path=chroma_data)
+else:
+    chroma = chromadb.PersistentClient(path=chroma_data)
+
 collection = chroma.get_or_create_collection(
-    name=os.getenv('CHROMA_COLLECTION','ai_sale_knowledge'),
+    name=collection_name,
     metadata={'hnsw:space': 'cosine'},
 )
 print(f'Collection has {collection.count()} docs before loading')
 
-# Чтение файлов
-docs_dir = Path('/app/docs')
+scan_dirs = [
+    (Path('/app/docs'), '*', 'docs'),
+    (Path('/app/parsing_raw'), '*.md', 'parsing_raw'),
+]
 all_chunks = []
 
-for filepath in sorted(docs_dir.glob('*')):
-    if filepath.name.startswith('.') or filepath.is_dir():
+for base_dir, pattern, label in scan_dirs:
+    if not base_dir.is_dir():
+        print(f'Skip (no dir): {base_dir}')
         continue
-    text = filepath.read_text(encoding='utf-8')
-    print(f'Processing: {filepath.name} ({len(text)} chars)')
-
-    sections = re.split(r'\n(?=#{1,3}\s)', text)
-    current_h2 = ''
-    for section in sections:
-        section = section.strip()
-        if not section:
+    for filepath in sorted(base_dir.glob(pattern)):
+        if filepath.name.startswith('.') or filepath.is_dir() or not filepath.is_file():
             continue
-        h2 = re.match(r'^##\s+(.+)', section)
-        if h2:
-            current_h2 = h2.group(1).strip().strip('*')
+        text = filepath.read_text(encoding='utf-8')
+        print(f'Processing [{label}]: {filepath.name} ({len(text)} chars)')
 
-        # Split long sections
-        parts = [section] if len(section) <= 1200 else []
-        if not parts:
-            buf, cur = [], ''
-            for p in section.split('\n\n'):
-                if len(cur) + len(p) > 1200 and cur:
+        sections = re.split(r'\n(?=#{1,3}\s)', text)
+        current_h2 = ''
+        default_cat = 'knowledge' if label == 'parsing_raw' else 'company_info'
+        for section in sections:
+            section = section.strip()
+            if not section:
+                continue
+            h2 = re.match(r'^##\s+(.+)', section)
+            if h2:
+                current_h2 = h2.group(1).strip().strip('*')
+
+            parts = [section] if len(section) <= 1200 else []
+            if not parts:
+                buf, cur = [], ''
+                for p in section.split('\n\n'):
+                    if len(cur) + len(p) > 1200 and cur:
+                        buf.append(cur.strip())
+                        cur = p
+                    else:
+                        cur = cur + '\n\n' + p if cur else p
+                if cur.strip():
                     buf.append(cur.strip())
-                    cur = p
-                else:
-                    cur = cur + '\n\n' + p if cur else p
-            if cur.strip():
-                buf.append(cur.strip())
-            parts = buf
+                parts = buf
 
-        for part in parts:
-            cid = hashlib.md5(part.encode()).hexdigest()[:12]
-            all_chunks.append({
-                'id': cid,
-                'text': part,
-                'metadata': {
-                    'source': f'docs/{filepath.name}',
-                    'url': 'https://gkproject.ru',
-                    'title': current_h2 or filepath.name,
-                    'category': current_h2 or 'company_info',
-                },
-            })
+            for part in parts:
+                cid = hashlib.md5(part.encode()).hexdigest()[:12]
+                all_chunks.append({
+                    'id': cid,
+                    'text': part,
+                    'metadata': {
+                        'source': f'{label}/{filepath.name}',
+                        'url': 'https://gkproject.ru',
+                        'title': current_h2 or filepath.stem,
+                        'category': current_h2 or default_cat,
+                    },
+                })
 
-# Dedup
 seen = set()
 unique = []
 for c in all_chunks:
@@ -84,7 +103,6 @@ for c in all_chunks:
 
 print(f'Total: {len(unique)} unique chunks')
 
-# Load
 model = os.getenv('OPENAI_EMBEDDING_MODEL', 'text-embedding-3-small')
 for i in range(0, len(unique), 50):
     batch = unique[i:i+50]

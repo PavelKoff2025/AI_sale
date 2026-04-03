@@ -97,11 +97,23 @@ docker compose build --no-cache && docker compose up -d
 
 ## Обновление базы знаний
 
-Добавьте файлы в папку `docs/` и запустите:
+Скрипт читает **Markdown** из `docs/` и из `parsing_agent/data/raw/` (в контейнере: `/app/parsing_raw`, напр. `Азбука.md`).
 
 ```bash
 ./scripts/load_docs_docker.sh
 ```
+
+## Синхронизация с Mac на VPS (rsync + rebuild + RAG)
+
+На Mac, из корня репозитория (нужен SSH-ключ или доступ по паролю; на сервере уже есть `~/AI_sale` и `.env`):
+
+```bash
+chmod +x scripts/sync_vps.sh
+export VPS_HOST=root@YOUR_VPS_IP   # или задайте в scripts/sync_vps.sh
+./scripts/sync_vps.sh
+```
+
+`rsync` не перезаписывает серверный `.env` и `chroma_data`.
 
 ## Привязка домена (опционально)
 

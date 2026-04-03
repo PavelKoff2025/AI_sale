@@ -30,6 +30,7 @@ Thumbs.db
 # Data
 parsing_agent/data/raw/*
 !parsing_agent/data/raw/.gitkeep
+!parsing_agent/data/raw/Азбука.md
 
 # ChromaDB local storage
 chroma_data/

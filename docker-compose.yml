@@ -32,6 +32,7 @@ services:
       - ./chroma_data:/app/chroma_data
       - ./logs:/app/logs
       - ./docs:/app/docs:ro
+      - ./parsing_agent/data/raw:/app/parsing_raw:ro
       - ./credentials:/app/credentials:ro
     restart: unless-stopped
     mem_limit: 400m
