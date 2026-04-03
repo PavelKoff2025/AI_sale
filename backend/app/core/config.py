@@ -37,6 +37,9 @@ class Settings(BaseSettings):
     # Company
     company_name: str = "Your Company"
     company_description: str = "AI Sales Assistant"
+    # Путь к файлу шаблона внутри контейнера (UTF-8). Обязательные плейсхолдеры: {company_name}, {rag_context}
+    # Пример: /app/docs/SYSTEM_PROMPT.md при томе ./docs:/app/docs в docker-compose
+    system_prompt_path: str = ""
 
     # RAG
     rag_top_k: int = 7

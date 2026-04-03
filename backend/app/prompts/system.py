@@ -1,3 +1,10 @@
+import logging
+from pathlib import Path
+
+from app.core.config import settings
+
+logger = logging.getLogger(__name__)
+
 SYSTEM_PROMPT_TEMPLATE = """Ты — AI-консультант компании «{company_name}».
 
 ═══════════════════════════════════
@@ -110,12 +117,30 @@ SYSTEM_PROMPT_TEMPLATE = """Ты — AI-консультант компании 
 """
 
 
+def _format_prompt(template: str, company_name: str, rag_context: str) -> str:
+    return template.format(company_name=company_name, rag_context=rag_context)
+
+
 def build_system_prompt(
     company_name: str,
     rag_context: str,
     chat_history: list[dict] | None = None,
 ) -> str:
-    return SYSTEM_PROMPT_TEMPLATE.format(
-        company_name=company_name,
-        rag_context=rag_context,
-    )
+    path = (settings.system_prompt_path or "").strip()
+    if path:
+        p = Path(path)
+        if p.is_file():
+            try:
+                custom = p.read_text(encoding="utf-8")
+                return _format_prompt(custom, company_name, rag_context)
+            except (ValueError, KeyError) as e:
+                logger.error(
+                    "SYSTEM_PROMPT_PATH: ошибка подстановки в шаблон (%s). "
+                    "Нужны только плейсхолдеры {company_name} и {rag_context}; "
+                    "фигурные скобки в тексте экранируйте как {{ и }}.",
+                    e,
+                )
+        else:
+            logger.warning("SYSTEM_PROMPT_PATH=%s — файл не найден, встроенный промпт", path)
+
+    return _format_prompt(SYSTEM_PROMPT_TEMPLATE, company_name, rag_context)
