@@ -42,8 +42,10 @@ class Settings(BaseSettings):
     system_prompt_path: str = ""
 
     # RAG
-    rag_top_k: int = 7
-    rag_score_threshold: float = 0.3
+    rag_top_k: int = 12
+    rag_score_threshold: float = 0.22
+    # Если после порога пусто — добираем чанки с score >= этого значения (снижает «промахи» по Азбуке и т.п.)
+    rag_fallback_min_score: float = 0.12
 
     # Telegram
     telegram_bot_token: str = ""
