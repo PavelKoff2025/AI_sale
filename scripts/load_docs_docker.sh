@@ -20,20 +20,22 @@ if not api_key:
 
 openai_client = OpenAI(api_key=api_key)
 
-chroma_host = (os.getenv('CHROMA_HOST') or '').strip()
-chroma_port = int(os.getenv('CHROMA_PORT', '8000'))
 chroma_data = os.getenv('CHROMA_DATA_DIR', '/app/chroma_data')
 collection_name = os.getenv('CHROMA_COLLECTION', 'ai_sale_knowledge')
+chroma_host = (os.getenv('CHROMA_HOST') or '').strip()
+chroma_port = int(os.getenv('CHROMA_PORT', '8000'))
 
+chroma = None
 if chroma_host:
     try:
         chroma = chromadb.HttpClient(host=chroma_host, port=chroma_port)
         chroma.heartbeat()
+        print(f'Chroma: HTTP {chroma_host}:{chroma_port}')
     except Exception as e:
-        print(f'Chroma HttpClient failed ({e}), using PersistentClient at {chroma_data}')
-        chroma = chromadb.PersistentClient(path=chroma_data)
-else:
+        print(f'Chroma HTTP failed ({e!s}), fallback to disk')
+if chroma is None:
     chroma = chromadb.PersistentClient(path=chroma_data)
+    print(f'Chroma: PersistentClient {chroma_data}')
 
 collection = chroma.get_or_create_collection(
     name=collection_name,
