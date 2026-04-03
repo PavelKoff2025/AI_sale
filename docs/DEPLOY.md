@@ -115,6 +115,12 @@ export VPS_HOST=root@YOUR_VPS_IP   # или задайте в scripts/sync_vps.s
 
 `rsync` не перезаписывает серверный `.env` и `chroma_data`.
 
+### Каталог на VPS без `.git` (не клон, а копия с Mac)
+
+`git pull` работать не будет. Обновляйте файлы через **rsync/scp** с Mac. После изменений в **backend** (в т.ч. `backend/scripts/load_md_to_chroma.py`) выполните **`docker compose build backend && docker compose up -d`**, иначе контейнер останется со старым образом.
+
+Загрузка RAG: `./scripts/load_docs_docker.sh` — внутри вызывается скрипт из образа; при ошибке «No such file» сделайте rebuild backend.
+
 ## Привязка домена (опционально)
 
 1. Направьте A-запись домена на IP вашего VPS
