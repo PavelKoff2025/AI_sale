@@ -5,6 +5,8 @@ import sys
 
 from pathlib import Path
 
+from app import sqlite_shim  # noqa: F401 — до chromadb (старый SQLite на Linux)
+
 from dotenv import load_dotenv
 
 from app.pipeline import Pipeline

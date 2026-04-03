@@ -25,9 +25,12 @@ class GKProjectParser(BaseParser):
     async def parse(self, source_config: dict) -> list[ParsedDocument]:
         urls = source_config.get("urls", [])
         category = source_config.get("category", "general")
-        delay = source_config.get("delay_seconds", 1.0)
-        if "settings" not in source_config:
-            delay = 1.0
+        delay = float(source_config.get("delay_seconds", 1.0))
+        timeout = float(source_config.get("timeout", 60))
+        user_agent = source_config.get(
+            "user_agent", "GKProject-AI-Parser/1.0"
+        )
+        max_retries = int(source_config.get("max_retries", 3))
 
         documents = []
 
@@ -37,7 +40,7 @@ class GKProjectParser(BaseParser):
             self.visited_urls.add(url)
 
             try:
-                soup = await self._fetch(url)
+                soup = await self._fetch(url, timeout, user_agent, max_retries)
                 if not soup:
                     continue
 
@@ -52,7 +55,9 @@ class GKProjectParser(BaseParser):
                             continue
                         self.visited_urls.add(child_url)
                         await asyncio.sleep(delay)
-                        child_soup = await self._fetch(child_url)
+                        child_soup = await self._fetch(
+                            child_url, timeout, user_agent, max_retries
+                        )
                         if child_soup:
                             child_docs = self._extract_by_category(
                                 child_soup, child_url, category
@@ -65,18 +70,41 @@ class GKProjectParser(BaseParser):
 
         return documents
 
-    async def _fetch(self, url: str) -> BeautifulSoup | None:
-        try:
-            response = requests.get(
-                url,
-                timeout=30,
-                headers={"User-Agent": "GKProject-AI-Parser/1.0"},
-            )
-            response.raise_for_status()
-            return BeautifulSoup(response.text, "lxml")
-        except Exception as e:
-            logger.error("Failed to fetch %s: %s", url, e)
-            return None
+    async def _fetch(
+        self,
+        url: str,
+        timeout: float,
+        user_agent: str,
+        max_retries: int,
+    ) -> BeautifulSoup | None:
+        last_err: Exception | None = None
+        for attempt in range(max_retries):
+            try:
+                response = requests.get(
+                    url,
+                    timeout=timeout,
+                    headers={"User-Agent": user_agent},
+                )
+                response.raise_for_status()
+                return BeautifulSoup(response.text, "lxml")
+            except Exception as e:
+                last_err = e
+                logger.warning(
+                    "Fetch %s attempt %d/%d failed: %s",
+                    url,
+                    attempt + 1,
+                    max_retries,
+                    e,
+                )
+                if attempt < max_retries - 1:
+                    await asyncio.sleep(2**attempt)
+        logger.error(
+            "Failed to fetch %s after %d attempts: %s",
+            url,
+            max_retries,
+            last_err,
+        )
+        return None
 
     def _extract_by_category(
         self, soup: BeautifulSoup, url: str, category: str

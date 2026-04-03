@@ -23,6 +23,90 @@ sources:
       - "https://gkproject.ru/contacts/"
     category: "contacts"
 
+  # --- Отопление частного дома (лендинг услуги) ---
+  - name: "otoplenie_doma"
+    type: "gkproject"
+    urls:
+      - "https://gkproject.ru/otoplenie/otoplenie_doma/"
+    category: "otoplenie"
+
+  # --- Монтаж котельной под ключ ---
+  - name: "montazh_kotelnoy_pod_klyuch"
+    type: "gkproject"
+    urls:
+      - "https://gkproject.ru/otoplenie/montazh_kotelnoy_pod_klyuch/"
+    category: "otoplenie"
+
+  # --- Монтаж отопления ---
+  - name: "montazh_otopleniya"
+    type: "gkproject"
+    urls:
+      - "https://gkproject.ru/otoplenie/montazh_otopleniya/"
+    category: "otoplenie"
+
+  # --- Монтаж водоснабжения ---
+  - name: "montazh_vodosnabzheniya"
+    type: "gkproject"
+    urls:
+      - "https://gkproject.ru/otoplenie/montazh_vodosnabzheniya/"
+    category: "otoplenie"
+
+  # --- Монтаж тёплого пола под ключ ---
+  - name: "montazh_teplogo_pola_pod_kluch"
+    type: "gkproject"
+    urls:
+      - "https://gkproject.ru/otoplenie/montazh_teplogo_pola_pod_kluch/"
+    category: "otoplenie"
+
+  # --- Монтаж котлов ---
+  - name: "montazh_kotlov"
+    type: "gkproject"
+    urls:
+      - "https://gkproject.ru/otoplenie/montazh-kotlov/"
+    category: "otoplenie"
+
+  # --- Монтаж радиаторов отопления ---
+  - name: "montazh_radiatorov_otopleniya"
+    type: "gkproject"
+    urls:
+      - "https://gkproject.ru/otoplenie/montazh-radiatorov-otopleniya/"
+    category: "otoplenie"
+
+  # --- Шеф-монтаж систем ОВК ---
+  - name: "shef_montazh_sistem_ovk"
+    type: "gkproject"
+    urls:
+      - "https://gkproject.ru/otoplenie/shef_montazh_sistem_ovk/"
+    category: "otoplenie"
+
+  # --- Проектирование систем отопления ---
+  - name: "proektirovanie_sistem_otopleniya"
+    type: "gkproject"
+    urls:
+      - "https://gkproject.ru/proektirovanie/sistem-otopleniya/"
+    category: "proektirovanie"
+
+  # --- Проектирование водоснабжения ---
+  - name: "proektirovanie_vodosnabzheniya"
+    type: "gkproject"
+    urls:
+      - "https://gkproject.ru/proektirovanie/vodosnabzheniya/"
+    category: "proektirovanie"
+
+  # --- Сервис: обслуживание котельных ---
+  - name: "servis_obsluzhivanie_kotelnyh"
+    type: "gkproject"
+    urls:
+      - "https://gkproject.ru/servis/obsluzhivanie-kotelnyh/"
+    category: "servis"
+
+  # --- Сервис: обслуживание котлов ---
+  - name: "servis_obsluzhivanie_kotlov"
+    type: "gkproject"
+    urls:
+      - "https://gkproject.ru/servis/obsluzhivanie-kotlov/"
+    category: "servis"
+
   # --- Портфолио работ (с пагинацией) ---
   - name: "portfolio"
     type: "gkproject"
@@ -58,6 +142,6 @@ sources:
 
 settings:
   delay_seconds: 1.0
-  timeout: 30
+  timeout: 90
   user_agent: "GKProject-AI-Parser/1.0"
   max_retries: 3

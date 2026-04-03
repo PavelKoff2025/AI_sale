@@ -2,6 +2,7 @@ import logging
 import os
 from pathlib import Path
 
+from app import sqlite_shim  # noqa: F401 — до import chromadb
 import chromadb
 from openai import OpenAI
 

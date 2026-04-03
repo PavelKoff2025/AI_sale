@@ -9,6 +9,7 @@ from app.parsers.web_parser import WebParser
 from app.parsers.pdf_parser import PDFParser
 from app.parsers.docx_parser import DOCXParser
 from app.parsers.gkproject_parser import GKProjectParser
+from app.parsers.markdown_parser import MarkdownParser
 from app.processors.cleaner import TextCleaner
 from app.processors.chunker import TextChunker
 from app.loaders.chroma_loader import ChromaLoader
@@ -19,6 +20,7 @@ PARSER_MAP = {
     "web": WebParser,
     "pdf": PDFParser,
     "docx": DOCXParser,
+    "markdown": MarkdownParser,
     "gkproject": GKProjectParser,
 }
 
@@ -77,6 +79,7 @@ class Pipeline:
 
     async def _parse_all(self) -> list:
         all_documents = []
+        defaults = self.sources.get("settings") or {}
         for source in self.sources.get("sources", []):
             source_type = source["type"]
             parser_class = PARSER_MAP.get(source_type)
@@ -84,9 +87,10 @@ class Pipeline:
                 logger.warning("Unknown source type: %s", source_type)
                 continue
 
+            merged = {**defaults, **source}
             parser = parser_class()
             try:
-                docs = await parser.parse(source)
+                docs = await parser.parse(merged)
                 all_documents.extend(docs)
                 logger.info("Parsed %d documents from '%s'", len(docs), source["name"])
             except Exception as e:

@@ -1,0 +1,16 @@
+# Только локальные MD в RAG (без повторного парсинга сайта).
+# Файл: parsing_agent/data/raw/Азбука.md
+# Запуск: cd parsing_agent && python -m app.main --config configs/sources_azbuka.yaml
+
+sources:
+  - name: "Азбука"
+    type: "markdown"
+    path: "data/raw/Азбука.md"
+    category: "knowledge"
+    company_name: "ГК Проект"
+
+settings:
+  delay_seconds: 1.0
+  timeout: 90
+  user_agent: "GKProject-AI-Parser/1.0"
+  max_retries: 3
