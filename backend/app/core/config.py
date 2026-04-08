@@ -46,6 +46,14 @@ class Settings(BaseSettings):
     rag_score_threshold: float = 0.22
     # Если после порога пусто — добираем чанки с score >= этого значения (снижает «промахи» по Азбуке и т.п.)
     rag_fallback_min_score: float = 0.12
+    rag_cache_enabled: bool = True
+    rag_cache_ttl_seconds: int = 600
+    rag_cache_max_items: int = 500
+
+    # Response cache (для типовых FAQ; по умолчанию только для запросов без истории диалога)
+    response_cache_enabled: bool = True
+    response_cache_ttl_seconds: int = 300
+    response_cache_max_items: int = 500
 
     # Telegram
     telegram_bot_token: str = ""

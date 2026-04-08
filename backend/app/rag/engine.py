@@ -5,6 +5,7 @@ from pathlib import Path
 import chromadb
 
 from app.core.config import settings
+from app.services.cache_service import TTLCache, normalize_query
 
 logger = logging.getLogger(__name__)
 
@@ -18,6 +19,7 @@ class RAGEngine:
     def __init__(self):
         self.chroma_client: chromadb.ClientAPI | None = None
         self.collection = None
+        self._cache = TTLCache(max_items=settings.rag_cache_max_items)
 
     async def initialize(self):
         try:
@@ -106,6 +108,11 @@ class RAGEngine:
     async def search(self, query: str, top_k: int = 5) -> list[dict]:
         if not self.collection or self.collection.count() == 0:
             return []
+        cache_key = f"{normalize_query(query)}|k={top_k}"
+        if settings.rag_cache_enabled:
+            cached = self._cache.get(cache_key)
+            if cached is not None:
+                return cached
 
         try:
             query_embedding = await self._get_embedding(query)
@@ -146,7 +153,10 @@ class RAGEngine:
             if formatted:
                 logger.info("RAG: used top-%d chunks without score floor (weak match)", len(formatted))
 
-        return formatted[:k]
+        final = formatted[:k]
+        if settings.rag_cache_enabled:
+            self._cache.set(cache_key, final, settings.rag_cache_ttl_seconds)
+        return final
 
     async def get_collection_stats(self) -> dict:
         if not self.collection:
