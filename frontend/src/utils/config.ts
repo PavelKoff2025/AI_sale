@@ -14,7 +14,7 @@ export const defaultConfig: WidgetConfig = {
   wsUrl: resolveWsUrl(),
   title: "ГК Проект",
   subtitle: "Онлайн-консультант",
-  primaryColor: "#1B3A5C",
+  primaryColor: "#3D3D3D",
   position: "bottom-right",
   greeting: "Здравствуйте! Я AI-помощник «ГК Проект». Помогу с вопросами по монтажу котельных, отопления, водоснабжения, электрики и канализации. Чем могу помочь?",
   placeholder: "Задайте вопрос об услугах...",

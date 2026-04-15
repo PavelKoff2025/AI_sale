@@ -9,9 +9,7 @@ export function Header({ onClose, onLeadClick }: HeaderProps) {
   return (
     <div className="bg-brand-600 text-white px-4 py-3 flex items-center justify-between">
       <div className="flex items-center gap-3">
-        <div className="w-8 h-8 bg-brand-500 rounded-full flex items-center justify-center text-xs font-bold">
-          ГК
-        </div>
+        <img src="/logo-gk.png" alt="ГК Проект" className="w-8 h-8 rounded-full object-cover bg-white" />
         <div>
           <h3 className="font-semibold text-sm">{defaultConfig.title}</h3>
           <p className="text-xs text-brand-200">{defaultConfig.subtitle}</p>

@@ -64,9 +64,7 @@ export function MessageItem({ message }: MessageItemProps) {
   return (
     <div className={`flex ${isUser ? "justify-end" : "justify-start"}`}>
       {!isUser && (
-        <div className="w-6 h-6 bg-brand-600 rounded-full flex items-center justify-center text-white text-[10px] font-bold mr-2 mt-1 shrink-0">
-          ГК
-        </div>
+        <img src="/logo-gk.png" alt="ГК" className="w-6 h-6 rounded-full object-cover bg-white mr-2 mt-1 shrink-0" />
       )}
       <div
         className={`max-w-[75%] px-3 py-2 rounded-2xl text-sm leading-relaxed ${

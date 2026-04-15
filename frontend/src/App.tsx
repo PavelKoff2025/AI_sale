@@ -82,14 +82,8 @@ export default function App() {
       {/* NAV */}
       <nav className="sticky top-0 z-40 bg-white/95 backdrop-blur border-b border-gray-100 shadow-sm">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-          <a href="https://gkproject.ru" target="_blank" rel="noopener noreferrer" className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-brand-600 rounded-lg flex items-center justify-center text-white font-bold text-sm tracking-tight">
-              ГК
-            </div>
-            <div className="hidden sm:block">
-              <span className="font-bold text-brand-600 text-lg tracking-tight">ПРОЕКТ</span>
-              <span className="text-[11px] text-gray-400 block leading-tight">Инженерные системы</span>
-            </div>
+          <a href="https://gkproject.ru" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2">
+            <img src="/logo-gk.png" alt="ГК Проект" className="h-11 w-auto" />
           </a>
           <div className="flex items-center gap-4 sm:gap-6">
             <a href="https://gkproject.ru" target="_blank" rel="noopener noreferrer" className="text-sm text-gray-500 hover:text-brand-600 transition-colors hidden md:inline">
@@ -173,14 +167,14 @@ export default function App() {
                 key={s.title}
                 className="group bg-white border border-gray-100 rounded-xl p-6 hover:border-brand-300 hover:shadow-lg transition-all"
               >
-                <div className="w-12 h-12 bg-brand-50 text-brand-500 rounded-lg flex items-center justify-center mb-4 group-hover:bg-brand-600 group-hover:text-white transition-colors">
+                <div className="w-12 h-12 bg-accent-50 text-accent-400 rounded-lg flex items-center justify-center mb-4 group-hover:bg-accent-400 group-hover:text-white transition-colors">
                   {s.icon}
                 </div>
                 <h3 className="font-bold text-lg text-gray-900 mb-3">{s.title}</h3>
                 <ul className="space-y-1.5">
                   {s.items.map((it) => (
                     <li key={it} className="text-sm text-gray-500 flex items-start gap-2">
-                      <span className="text-brand-400 mt-0.5">•</span>
+                      <span className="text-accent-400 mt-0.5">•</span>
                       {it}
                     </li>
                   ))}
@@ -217,7 +211,7 @@ export default function App() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
             {STEPS.map((step) => (
               <div key={step.num} className="bg-white rounded-xl p-6 border border-gray-100 hover:shadow-md transition-shadow">
-                <span className="text-3xl font-bold text-brand-200 block mb-3">{step.num}</span>
+                <span className="text-3xl font-bold text-accent-400 block mb-3">{step.num}</span>
                 <h3 className="font-semibold text-gray-900 mb-2">{step.title}</h3>
                 <p className="text-sm text-gray-500 leading-relaxed">{step.desc}</p>
               </div>
@@ -273,7 +267,7 @@ export default function App() {
       <footer className="bg-brand-800 text-brand-300 py-8">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs">
           <div className="flex items-center gap-2">
-            <div className="w-7 h-7 bg-brand-600 rounded flex items-center justify-center text-white text-[9px] font-bold">ГК</div>
+            <img src="/logo-gk.png" alt="ГК Проект" className="h-7 w-auto" />
             <span>© {new Date().getFullYear()} ООО «ГК Проект» — Инженерные системы под ключ</span>
           </div>
           <div className="flex items-center gap-4">
