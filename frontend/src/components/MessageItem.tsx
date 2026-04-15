@@ -17,30 +17,37 @@ function isSafeUrl(url: string): boolean {
 
 function renderMessageContent(text: string) {
   const parts: (string | JSX.Element)[] = [];
-  const linkRegex = /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g;
+  const combinedRegex = /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)|\*\*(.+?)\*\*/g;
   let lastIndex = 0;
   let match: RegExpExecArray | null;
+  let keyIdx = 0;
 
-  while ((match = linkRegex.exec(text)) !== null) {
+  while ((match = combinedRegex.exec(text)) !== null) {
     if (match.index > lastIndex) {
       parts.push(text.slice(lastIndex, match.index));
     }
-    const href = match[2];
-    if (isSafeUrl(href)) {
-      parts.push(
-        <a
-          key={match.index}
-          href={href}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-blue-600 underline hover:text-blue-800"
-        >
-          {match[1]}
-        </a>
-      );
-    } else {
-      parts.push(match[1]);
+
+    if (match[2] !== undefined) {
+      const href = match[2];
+      if (isSafeUrl(href)) {
+        parts.push(
+          <a
+            key={keyIdx++}
+            href={href}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-blue-600 underline hover:text-blue-800"
+          >
+            {match[1]}
+          </a>
+        );
+      } else {
+        parts.push(match[1]);
+      }
+    } else if (match[3] !== undefined) {
+      parts.push(<strong key={keyIdx++}>{match[3]}</strong>);
     }
+
     lastIndex = match.index + match[0].length;
   }
 
