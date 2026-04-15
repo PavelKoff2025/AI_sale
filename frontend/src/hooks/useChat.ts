@@ -26,7 +26,7 @@ export function useChat() {
 
   const sendMessage = useCallback(
     async (text: string) => {
-      if (!text.trim() || isLoading) return;
+      if (!text.trim()) return;
 
       const userMessage: Message = {
         id: uid(),
@@ -88,7 +88,7 @@ export function useChat() {
         setIsLoading(false);
       }
     },
-    [isLoading, sessionId]
+    [sessionId]
   );
 
   const clearHistory = useCallback(() => {
