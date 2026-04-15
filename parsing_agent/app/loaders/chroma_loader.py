@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import os
 from pathlib import Path
@@ -10,7 +11,10 @@ from app.processors.chunker import Chunk
 
 logger = logging.getLogger(__name__)
 
-CHROMA_PERSIST_DIR = str(Path(__file__).resolve().parents[3] / "chroma_data")
+CHROMA_PERSIST_DIR = os.getenv(
+    "CHROMA_DATA_DIR",
+    str(Path(__file__).resolve().parents[3] / "chroma_data"),
+)
 
 
 class ChromaLoader:
@@ -62,25 +66,32 @@ class ChromaLoader:
 
         logger.info("Loading %d chunks to ChromaDB...", len(unique_chunks))
 
+        loop = asyncio.get_running_loop()
         for i in range(0, len(unique_chunks), self.batch_size):
             batch = unique_chunks[i : i + self.batch_size]
             texts = [c.text for c in batch]
             ids = [c.chunk_id for c in batch]
             metadatas = [c.metadata for c in batch]
 
-            response = self.openai_client.embeddings.create(
-                model=self.embedding_model,
-                input=texts,
+            response = await loop.run_in_executor(
+                None,
+                lambda t=texts: self.openai_client.embeddings.create(
+                    model=self.embedding_model,
+                    input=t,
+                ),
             )
             embeddings = [item.embedding for item in response.data]
 
-            self.collection.upsert(
-                ids=ids,
-                documents=texts,
-                embeddings=embeddings,
-                metadatas=metadatas,
+            await loop.run_in_executor(
+                None,
+                lambda: self.collection.upsert(
+                    ids=ids,
+                    documents=texts,
+                    embeddings=embeddings,
+                    metadatas=metadatas,
+                ),
             )
-            logger.info("Loaded batch %d-%d / %d", i + 1, i + len(batch), len(chunks))
+            logger.info("Loaded batch %d-%d / %d", i + 1, i + len(batch), len(unique_chunks))
 
         logger.info("All chunks loaded. Total in collection: %d", self.collection.count())
 

@@ -35,7 +35,7 @@ async def transcribe_voice(audio: UploadFile = File(...)):
         raise HTTPException(status_code=400, detail=str(e)) from e
     except Exception as e:
         logger.exception("Transcription failed")
-        raise HTTPException(status_code=502, detail=str(e)[:200]) from e
+        raise HTTPException(status_code=502, detail="Ошибка распознавания речи") from e
 
     return {"text": text.strip()}
 
@@ -51,7 +51,7 @@ async def synthesize_speech(body: TTSRequest):
         audio_bytes = await voice_service.synthesize(body.text)
     except Exception as e:
         logger.exception("TTS failed")
-        raise HTTPException(status_code=502, detail=str(e)[:200]) from e
+        raise HTTPException(status_code=502, detail="Ошибка синтеза речи") from e
 
     return StreamingResponse(
         io.BytesIO(audio_bytes),

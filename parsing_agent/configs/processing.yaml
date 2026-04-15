@@ -3,8 +3,9 @@
 processing:
   chunking:
     strategy: "recursive"
-    chunk_size: 500
-    chunk_overlap: 50
+    # chunk_size в символах (RecursiveCharacterTextSplitter). ~500 токенов ≈ 2000 символов для русского текста
+    chunk_size: 2000
+    chunk_overlap: 200
     separators:
       - "\n\n"
       - "\n"

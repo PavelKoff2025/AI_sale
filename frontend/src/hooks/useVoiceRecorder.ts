@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { transcribeVoice } from "../utils/api";
 
 export type VoiceRecorderState = "idle" | "recording" | "processing" | "error";
@@ -100,6 +100,17 @@ export function useVoiceRecorder(onTranscript: (text: string) => void) {
       cleanupStream();
     }
   }, [cleanupStream, onTranscript]);
+
+  useEffect(() => {
+    return () => {
+      if (mediaRef.current && mediaRef.current.state !== "inactive") {
+        mediaRef.current.stop();
+      }
+      streamRef.current?.getTracks().forEach((t) => t.stop());
+      streamRef.current = null;
+      mediaRef.current = null;
+    };
+  }, []);
 
   const toggleRecording = useCallback(async () => {
     if (state === "recording") {

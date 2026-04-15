@@ -67,7 +67,6 @@ class AgentService:
         system_prompt = build_system_prompt(
             company_name=settings.company_name,
             rag_context=rag_context,
-            chat_history=history,
         )
 
         messages = [
@@ -134,7 +133,6 @@ class AgentService:
         system_prompt = build_system_prompt(
             company_name=settings.company_name,
             rag_context=rag_context,
-            chat_history=history,
         )
 
         messages = [

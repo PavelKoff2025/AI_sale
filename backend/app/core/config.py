@@ -60,6 +60,9 @@ class Settings(BaseSettings):
     telegram_chat_id: str = ""
     telegram_enabled: bool = True
 
+    # Admin API key for protected endpoints (leads list, analytics, knowledge delete)
+    admin_api_key: str = ""
+
     # Session
     session_max_messages: int = 20
     session_ttl_seconds: int = 1800

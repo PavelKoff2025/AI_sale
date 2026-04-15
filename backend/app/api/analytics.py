@@ -1,19 +1,20 @@
 import logging
 
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Depends, Query
 
+from app.core.dependencies import verify_admin_key
 from app.rag.engine import rag_engine
 from app.services.conversation_logger import conversation_logger
 from app.services.session_service import session_service
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(verify_admin_key)])
 
 
 @router.get("/")
 async def get_analytics():
-    sessions = session_service._sessions
+    sessions = session_service.get_all_sessions()
     total_sessions = len(sessions)
     total_messages = sum(
         len(s["messages"]) for s in sessions.values()

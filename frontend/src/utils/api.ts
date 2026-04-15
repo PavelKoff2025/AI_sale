@@ -61,12 +61,14 @@ export async function sendMessage(request: ChatRequest): Promise<ChatResponse> {
 }
 
 export async function* streamMessage(
-  request: ChatRequest
+  request: ChatRequest,
+  signal?: AbortSignal
 ): AsyncGenerator<string> {
   const response = await fetch(`${defaultConfig.apiUrl}/api/chat/stream`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(request),
+    signal,
   });
 
   if (!response.ok) {

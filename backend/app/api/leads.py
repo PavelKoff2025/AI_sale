@@ -2,8 +2,9 @@ import logging
 import uuid
 from datetime import datetime
 
-from fastapi import APIRouter, BackgroundTasks
+from fastapi import APIRouter, BackgroundTasks, Depends
 
+from app.core.dependencies import verify_admin_key
 from app.models.lead import LeadRequest, LeadResponse
 from app.services.conversation_logger import conversation_logger
 from app.services.qualification_service import qualification_service
@@ -14,6 +15,7 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
+MAX_LEADS_STORED = 1000
 leads_storage: list[dict] = []
 
 
@@ -39,6 +41,8 @@ async def create_lead(request: LeadRequest, background_tasks: BackgroundTasks):
         "created_at": datetime.now().isoformat(),
     }
     leads_storage.append(lead)
+    if len(leads_storage) > MAX_LEADS_STORED:
+        leads_storage[:] = leads_storage[-MAX_LEADS_STORED:]
     logger.info("New lead: %s — %s (%s)", lead_id, request.name, request.phone)
 
     background_tasks.add_task(_enrich_and_notify, lead)
@@ -46,12 +50,12 @@ async def create_lead(request: LeadRequest, background_tasks: BackgroundTasks):
     return LeadResponse(lead_id=lead_id)
 
 
-@router.get("/")
+@router.get("/", dependencies=[Depends(verify_admin_key)])
 async def list_leads():
     return {"leads": leads_storage, "total": len(leads_storage)}
 
 
-@router.post("/test-telegram")
+@router.post("/test-telegram", dependencies=[Depends(verify_admin_key)])
 async def test_telegram():
     """Отправить тестовое сообщение в Telegram для проверки настроек."""
     success = await telegram_service.send_test_message()

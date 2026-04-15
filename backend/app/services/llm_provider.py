@@ -21,6 +21,10 @@ MAX_CONCURRENT_LLM = 10
 _llm_semaphore = asyncio.Semaphore(MAX_CONCURRENT_LLM)
 
 
+def get_llm_in_use() -> int:
+    return MAX_CONCURRENT_LLM - _llm_semaphore._value
+
+
 @dataclass
 class LLMResponse:
     content: str
@@ -73,7 +77,7 @@ class OpenAIProvider(BaseLLMProvider):
                 max_tokens=max_tokens,
             )
             return LLMResponse(
-                content=response.choices[0].message.content,
+                content=response.choices[0].message.content or "",
                 tokens_used=response.usage.total_tokens if response.usage else 0,
                 provider=self.name,
             )
@@ -146,31 +150,34 @@ class GigaChatProvider(BaseLLMProvider):
         )
 
     async def chat(self, messages, temperature=0.7, max_tokens=1000) -> LLMResponse:
-        chat_obj = self._build_chat(messages, temperature, max_tokens)
-        async with self._GigaChat(**self._client_kwargs) as client:
-            response = await client.achat(chat_obj)
-        content = response.choices[0].message.content
-        tokens_used = (
-            response.usage.total_tokens if response.usage else 0
-        )
-        return LLMResponse(
-            content=content,
-            tokens_used=tokens_used,
-            provider=self.name,
-        )
+        async with _llm_semaphore:
+            chat_obj = self._build_chat(messages, temperature, max_tokens)
+            async with self._GigaChat(**self._client_kwargs) as client:
+                response = await client.achat(chat_obj)
+            content = response.choices[0].message.content
+            tokens_used = (
+                response.usage.total_tokens if response.usage else 0
+            )
+            return LLMResponse(
+                content=content,
+                tokens_used=tokens_used,
+                provider=self.name,
+            )
 
     async def chat_stream(self, messages, temperature=0.7, max_tokens=1000):
-        chat_obj = self._build_chat(messages, temperature, max_tokens)
-        async with self._GigaChat(**self._client_kwargs) as client:
-            async for chunk in client.astream(chat_obj):
-                delta = chunk.choices[0].delta
-                if delta.content:
-                    yield delta.content
+        async with _llm_semaphore:
+            chat_obj = self._build_chat(messages, temperature, max_tokens)
+            async with self._GigaChat(**self._client_kwargs) as client:
+                async for chunk in client.astream(chat_obj):
+                    delta = chunk.choices[0].delta
+                    if delta.content:
+                        yield delta.content
 
     async def get_embedding(self, text: str) -> list[float]:
-        async with self._GigaChat(**self._client_kwargs) as client:
-            response = await client.aembeddings(texts=[text])
-        return response.data[0].embedding
+        async with _llm_semaphore:
+            async with self._GigaChat(**self._client_kwargs) as client:
+                response = await client.aembeddings(texts=[text])
+            return response.data[0].embedding
 
 
 class AutoProvider(BaseLLMProvider):
@@ -193,48 +200,45 @@ class AutoProvider(BaseLLMProvider):
         return self._active.name
 
     async def chat(self, messages, temperature=0.7, max_tokens=1000) -> LLMResponse:
-        async with _llm_semaphore:
-            try:
-                result = await self.primary.chat(messages, temperature, max_tokens)
-                self._active = self.primary
-                return result
-            except Exception as e:
-                logger.warning(
-                    "Primary LLM (%s) failed: %s. Switching to %s",
-                    self.primary.name, str(e)[:120], self.fallback.name,
-                )
-                self._active = self.fallback
-                return await self.fallback.chat(messages, temperature, max_tokens)
+        try:
+            result = await self.primary.chat(messages, temperature, max_tokens)
+            self._active = self.primary
+            return result
+        except Exception as e:
+            logger.warning(
+                "Primary LLM (%s) failed: %s. Switching to %s",
+                self.primary.name, str(e)[:120], self.fallback.name,
+            )
+            self._active = self.fallback
+            return await self.fallback.chat(messages, temperature, max_tokens)
 
     async def chat_stream(self, messages, temperature=0.7, max_tokens=1000):
-        async with _llm_semaphore:
-            try:
-                chunks_buffer = []
-                async for chunk in self.primary.chat_stream(messages, temperature, max_tokens):
-                    chunks_buffer.append(chunk)
-                    yield chunk
-                self._active = self.primary
-                return
-            except Exception as e:
-                logger.warning(
-                    "Primary LLM stream (%s) failed after %d chunks: %s. Switching to %s",
-                    self.primary.name, len(chunks_buffer), str(e)[:120], self.fallback.name,
-                )
-
-            self._active = self.fallback
-            async for chunk in self.fallback.chat_stream(messages, temperature, max_tokens):
+        try:
+            chunks_buffer = []
+            async for chunk in self.primary.chat_stream(messages, temperature, max_tokens):
+                chunks_buffer.append(chunk)
                 yield chunk
+            self._active = self.primary
+            return
+        except Exception as e:
+            logger.warning(
+                "Primary LLM stream (%s) failed after %d chunks: %s. Switching to %s",
+                self.primary.name, len(chunks_buffer), str(e)[:120], self.fallback.name,
+            )
+
+        self._active = self.fallback
+        async for chunk in self.fallback.chat_stream(messages, temperature, max_tokens):
+            yield chunk
 
     async def get_embedding(self, text: str) -> list[float]:
-        async with _llm_semaphore:
-            try:
-                return await self.primary.get_embedding(text)
-            except Exception as e:
-                logger.warning(
-                    "Primary embeddings (%s) failed: %s. Trying %s",
-                    self.primary.name, str(e)[:120], self.fallback.name,
-                )
-                return await self.fallback.get_embedding(text)
+        try:
+            return await self.primary.get_embedding(text)
+        except Exception as e:
+            logger.warning(
+                "Primary embeddings (%s) failed: %s. Trying %s",
+                self.primary.name, str(e)[:120], self.fallback.name,
+            )
+            return await self.fallback.get_embedding(text)
 
 
 def create_llm_provider() -> BaseLLMProvider:

@@ -1,7 +1,7 @@
 from fastapi import APIRouter
 
 from app.core.config import settings
-from app.services.llm_provider import llm_provider, _llm_semaphore, MAX_CONCURRENT_LLM
+from app.services.llm_provider import llm_provider, MAX_CONCURRENT_LLM, get_llm_in_use
 from app.services.session_service import session_service
 from app.services.voice_service import voice_service
 
@@ -18,8 +18,6 @@ async def health_check():
     elif hasattr(llm_provider, "name"):
         provider_name = llm_provider.name
 
-    llm_in_use = MAX_CONCURRENT_LLM - _llm_semaphore._value
-
     return {
         "status": "healthy",
         "service": "ai-sale-backend",
@@ -28,7 +26,7 @@ async def health_check():
         "active_sessions": session_service.active_sessions_count(),
         "websocket_connections": get_active_connections_count(),
         "websocket_limit": MAX_WS_CONNECTIONS,
-        "llm_concurrent": llm_in_use,
+        "llm_concurrent": get_llm_in_use(),
         "llm_concurrent_limit": MAX_CONCURRENT_LLM,
         "voice_enabled": voice_service.enabled,
     }

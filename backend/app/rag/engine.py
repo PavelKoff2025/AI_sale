@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import os
 from pathlib import Path
@@ -22,28 +23,36 @@ class RAGEngine:
         self._cache = TTLCache(max_items=settings.rag_cache_max_items)
 
     async def initialize(self):
+        loop = asyncio.get_running_loop()
         try:
-            self.chroma_client = chromadb.HttpClient(
+            client = chromadb.HttpClient(
                 host=settings.chroma_host,
                 port=settings.chroma_port,
             )
-            self.chroma_client.heartbeat()
+            await loop.run_in_executor(None, client.heartbeat)
+            self.chroma_client = client
             logger.info("Connected to ChromaDB server at %s:%s", settings.chroma_host, settings.chroma_port)
         except Exception:
             logger.warning(
                 "ChromaDB server not available, using PersistentClient at %s",
                 CHROMA_PERSIST_DIR,
             )
-            self.chroma_client = chromadb.PersistentClient(path=CHROMA_PERSIST_DIR)
+            self.chroma_client = await loop.run_in_executor(
+                None, lambda: chromadb.PersistentClient(path=CHROMA_PERSIST_DIR)
+            )
 
-        self.collection = self.chroma_client.get_or_create_collection(
-            name=settings.chroma_collection,
-            metadata={"hnsw:space": "cosine"},
+        self.collection = await loop.run_in_executor(
+            None,
+            lambda: self.chroma_client.get_or_create_collection(
+                name=settings.chroma_collection,
+                metadata={"hnsw:space": "cosine"},
+            ),
         )
+        count = await loop.run_in_executor(None, self.collection.count)
         logger.info(
             "RAG Engine initialized. Collection '%s' has %d documents.",
             settings.chroma_collection,
-            self.collection.count(),
+            count,
         )
 
     async def _get_embedding(self, text: str) -> list[float]:
@@ -106,7 +115,11 @@ class RAGEngine:
         return {"$or": uniq[:8]}
 
     async def search(self, query: str, top_k: int = 5) -> list[dict]:
-        if not self.collection or self.collection.count() == 0:
+        loop = asyncio.get_running_loop()
+        if not self.collection:
+            return []
+        col_count = await loop.run_in_executor(None, self.collection.count)
+        if col_count == 0:
             return []
         cache_key = f"{normalize_query(query)}|k={top_k}"
         if settings.rag_cache_enabled:
@@ -121,12 +134,15 @@ class RAGEngine:
             return []
 
         k = top_k
-        n_fetch = min(max(k, 15), self.collection.count())
+        n_fetch = min(max(k, 15), col_count)
 
-        results = self.collection.query(
-            query_embeddings=[query_embedding],
-            n_results=n_fetch,
-            include=["documents", "metadatas", "distances"],
+        results = await loop.run_in_executor(
+            None,
+            lambda: self.collection.query(
+                query_embeddings=[query_embedding],
+                n_results=n_fetch,
+                include=["documents", "metadatas", "distances"],
+            ),
         )
 
         formatted = self._pack_query_results(results, settings.rag_score_threshold)
@@ -134,11 +150,15 @@ class RAGEngine:
         wd = self._pipe_document_filter(query)
         if wd and len(formatted) < 3:
             try:
-                wd_results = self.collection.query(
-                    query_embeddings=[query_embedding],
-                    n_results=min(10, self.collection.count()),
-                    where_document=wd,
-                    include=["documents", "metadatas", "distances"],
+                wd_count = await loop.run_in_executor(None, self.collection.count)
+                wd_results = await loop.run_in_executor(
+                    None,
+                    lambda: self.collection.query(
+                        query_embeddings=[query_embedding],
+                        n_results=min(10, wd_count),
+                        where_document=wd,
+                        include=["documents", "metadatas", "distances"],
+                    ),
                 )
                 extra = self._pack_query_results(wd_results, settings.rag_fallback_min_score)
                 formatted = self._merge_by_id(formatted, extra, n_fetch)
@@ -161,14 +181,17 @@ class RAGEngine:
     async def get_collection_stats(self) -> dict:
         if not self.collection:
             return {"status": "not_initialized"}
+        loop = asyncio.get_running_loop()
+        count = await loop.run_in_executor(None, self.collection.count)
         return {
             "collection": settings.chroma_collection,
-            "document_count": self.collection.count(),
+            "document_count": count,
         }
 
     async def delete_chunk(self, chunk_id: str):
         if self.collection:
-            self.collection.delete(ids=[chunk_id])
+            loop = asyncio.get_running_loop()
+            await loop.run_in_executor(None, lambda: self.collection.delete(ids=[chunk_id]))
 
 
 rag_engine = RAGEngine()

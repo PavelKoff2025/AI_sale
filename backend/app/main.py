@@ -1,7 +1,7 @@
 import logging
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.router import api_router
@@ -50,6 +50,6 @@ app.include_router(api_router, prefix="/api")
 
 
 @app.websocket("/ws/chat")
-async def websocket_chat(websocket):
+async def websocket_chat(websocket: WebSocket):
     from app.api.chat import handle_websocket_chat
     await handle_websocket_chat(websocket)

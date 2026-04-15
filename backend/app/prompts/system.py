@@ -56,7 +56,6 @@ def _format_prompt(template: str, company_name: str, rag_context: str) -> str:
 def build_system_prompt(
     company_name: str,
     rag_context: str,
-    chat_history: list[dict] | None = None,
 ) -> str:
     path = (settings.system_prompt_path or "").strip()
     if path:

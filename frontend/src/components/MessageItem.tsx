@@ -6,6 +6,15 @@ interface MessageItemProps {
   message: Message;
 }
 
+function isSafeUrl(url: string): boolean {
+  try {
+    const parsed = new URL(url);
+    return parsed.protocol === "http:" || parsed.protocol === "https:";
+  } catch {
+    return false;
+  }
+}
+
 function renderMessageContent(text: string) {
   const parts: (string | JSX.Element)[] = [];
   const linkRegex = /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g;
@@ -16,17 +25,22 @@ function renderMessageContent(text: string) {
     if (match.index > lastIndex) {
       parts.push(text.slice(lastIndex, match.index));
     }
-    parts.push(
-      <a
-        key={match.index}
-        href={match[2]}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="text-blue-600 underline hover:text-blue-800"
-      >
-        {match[1]}
-      </a>
-    );
+    const href = match[2];
+    if (isSafeUrl(href)) {
+      parts.push(
+        <a
+          key={match.index}
+          href={href}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-blue-600 underline hover:text-blue-800"
+        >
+          {match[1]}
+        </a>
+      );
+    } else {
+      parts.push(match[1]);
+    }
     lastIndex = match.index + match[0].length;
   }
 

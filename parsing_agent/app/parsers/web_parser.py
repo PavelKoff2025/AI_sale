@@ -1,6 +1,5 @@
 import asyncio
 import logging
-import time
 
 import requests
 from bs4 import BeautifulSoup
@@ -28,9 +27,13 @@ class WebParser(BaseParser):
         return documents
 
     async def _parse_url(self, url: str) -> ParsedDocument | None:
-        response = requests.get(url, timeout=30, headers={
-            "User-Agent": "AI-Sale-Parser/1.0 (compatible bot)",
-        })
+        loop = asyncio.get_running_loop()
+        response = await loop.run_in_executor(
+            None,
+            lambda: requests.get(url, timeout=30, headers={
+                "User-Agent": "AI-Sale-Parser/1.0 (compatible bot)",
+            }),
+        )
         response.raise_for_status()
 
         soup = BeautifulSoup(response.text, "lxml")

@@ -185,11 +185,8 @@ class GoogleSheetsService:
 
     def _append_async(self, sheet_name: str, row: list):
         try:
-            loop = asyncio.get_event_loop()
-            if loop.is_running():
-                loop.run_in_executor(None, self._append_row, sheet_name, row)
-            else:
-                self._append_row(sheet_name, row)
+            loop = asyncio.get_running_loop()
+            loop.run_in_executor(None, self._append_row, sheet_name, row)
         except RuntimeError:
             self._append_row(sheet_name, row)
 

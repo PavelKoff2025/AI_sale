@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { useChat } from "../hooks/useChat";
-import { useSession } from "../hooks/useSession";
 import { Header } from "./Header";
 import { MessageList } from "./MessageList";
 import { InputBar } from "./InputBar";
@@ -13,8 +12,7 @@ interface ChatWindowProps {
 }
 
 export function ChatWindow({ onClose }: ChatWindowProps) {
-  const { messages, isLoading, sendMessage } = useChat();
-  const { sessionId } = useSession();
+  const { messages, isLoading, sendMessage, sessionId } = useChat();
   const [showLeadForm, setShowLeadForm] = useState(false);
 
   const displayMessages =

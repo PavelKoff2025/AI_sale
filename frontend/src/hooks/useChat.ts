@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import type { Message } from "../utils/types";
 import { streamMessage } from "../utils/api";
 import { useSession } from "./useSession";
@@ -16,6 +16,13 @@ export function useChat() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { sessionId } = useSession();
+  const abortRef = useRef<AbortController | null>(null);
+
+  useEffect(() => {
+    return () => {
+      abortRef.current?.abort();
+    };
+  }, []);
 
   const sendMessage = useCallback(
     async (text: string) => {
@@ -41,11 +48,14 @@ export function useChat() {
       setError(null);
 
       try {
+        abortRef.current?.abort();
+        const controller = new AbortController();
+        abortRef.current = controller;
         let fullContent = "";
         for await (const chunk of streamMessage({
           message: text,
           session_id: sessionId,
-        })) {
+        }, controller.signal)) {
           fullContent += chunk;
           setMessages((prev) =>
             prev.map((m) =>
@@ -86,5 +96,5 @@ export function useChat() {
     setError(null);
   }, []);
 
-  return { messages, isLoading, error, sendMessage, clearHistory };
+  return { messages, isLoading, error, sendMessage, clearHistory, sessionId };
 }

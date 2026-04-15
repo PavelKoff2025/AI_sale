@@ -23,9 +23,8 @@ services:
     env_file:
       - .env
     environment:
-      # Не задавайте CHROMA_HOST пустым — Chroma HttpClient падает (нет http://).
-      # В Docker без отдельного сервиса chromadb в .env можно не указывать CHROMA_HOST
-      # или оставить localhost: тогда backend/load_docs уйдут в PersistentClient на томе.
+      # ChromaDB: без отдельного сервиса chromadb backend автоматически использует
+      # PersistentClient на томе ./chroma_data. Не задавайте CHROMA_HOST пустым.
       - CHROMA_DATA_DIR=/app/chroma_data
       - GOOGLE_SHEETS_CREDENTIALS_FILE=/app/credentials/google_service_account.json
     volumes:
@@ -42,6 +41,3 @@ services:
       timeout: 10s
       retries: 5
       start_period: 20s
-
-volumes:
-  chroma_data:

@@ -1,4 +1,6 @@
+import asyncio
 import time
+
 from app.core.config import settings
 
 
@@ -7,6 +9,7 @@ class SessionService:
 
     def __init__(self):
         self._sessions: dict[str, dict] = {}
+        self._lock = asyncio.Lock()
 
     def get_history(self, session_id: str) -> list[dict]:
         session = self._sessions.get(session_id)
@@ -31,6 +34,10 @@ class SessionService:
     def active_sessions_count(self) -> int:
         self._cleanup_expired()
         return len(self._sessions)
+
+    def get_all_sessions(self) -> dict[str, dict]:
+        self._cleanup_expired()
+        return self._sessions
 
     def _cleanup_expired(self):
         now = time.time()

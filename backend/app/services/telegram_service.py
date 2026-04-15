@@ -3,6 +3,7 @@
 Использует Telegram Bot API через httpx (async).
 """
 
+import html
 import logging
 
 import httpx
@@ -63,10 +64,10 @@ class TelegramService:
             return False
 
     def _format_lead_message(self, lead: dict) -> str:
-        name = lead.get("name", "—")
-        phone = lead.get("phone", "—")
-        message = lead.get("message", "")
-        source = lead.get("source", "chat_widget")
+        name = html.escape(lead.get("name", "—"))
+        phone = html.escape(lead.get("phone", "—"))
+        message = html.escape(lead.get("message", ""))
+        source = html.escape(lead.get("source", "chat_widget"))
         created = lead.get("created_at", "")
         lead_id = lead.get("id", "")
         qualification = lead.get("qualification")

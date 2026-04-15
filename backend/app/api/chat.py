@@ -1,3 +1,4 @@
+import asyncio
 import json
 import logging
 import uuid
@@ -14,6 +15,7 @@ router = APIRouter()
 
 MAX_WS_CONNECTIONS = 15
 _active_ws: set[str] = set()
+_ws_lock = asyncio.Lock()
 
 
 def get_active_connections_count() -> int:
@@ -51,15 +53,15 @@ async def chat_stream(request: ChatRequest):
 
 
 async def handle_websocket_chat(websocket: WebSocket):
-    if len(_active_ws) >= MAX_WS_CONNECTIONS:
-        await websocket.close(code=1013, reason="Too many connections")
-        logger.warning("WebSocket rejected: limit %d reached", MAX_WS_CONNECTIONS)
-        return
-
-    await websocket.accept()
-    session_id = str(uuid.uuid4())
-    ws_id = session_id
-    _active_ws.add(ws_id)
+    async with _ws_lock:
+        if len(_active_ws) >= MAX_WS_CONNECTIONS:
+            await websocket.close(code=1013, reason="Too many connections")
+            logger.warning("WebSocket rejected: limit %d reached", MAX_WS_CONNECTIONS)
+            return
+        await websocket.accept()
+        session_id = str(uuid.uuid4())
+        ws_id = session_id
+        _active_ws.add(ws_id)
     logger.info("WebSocket connected: %s (active: %d)", ws_id, len(_active_ws))
 
     try:
@@ -68,9 +70,11 @@ async def handle_websocket_chat(websocket: WebSocket):
             message = data.get("message", "")
             session_id = data.get("session_id", session_id)
 
+            metadata = data.get("metadata")
             async for chunk in agent_service.process_message_stream(
                 message=message,
                 session_id=session_id,
+                metadata=metadata,
             ):
                 await websocket.send_json(chunk)
 

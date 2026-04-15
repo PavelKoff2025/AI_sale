@@ -14,7 +14,6 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT / "parsing_agent"))
 
 from dotenv import load_dotenv
 
@@ -155,12 +154,14 @@ def main():
     openai_client = OpenAI(api_key=api_key)
 
     try:
+        chroma_host = os.getenv("CHROMA_HOST", "localhost") or "localhost"
+        chroma_port = int(os.getenv("CHROMA_PORT", "8000") or "8000")
         chroma_client = chromadb.HttpClient(
-            host=os.getenv("CHROMA_HOST", "localhost"),
-            port=int(os.getenv("CHROMA_PORT", "8000")),
+            host=chroma_host,
+            port=chroma_port,
         )
         chroma_client.heartbeat()
-        print(f"Connected to ChromaDB server")
+        print(f"Connected to ChromaDB server at {chroma_host}:{chroma_port}")
     except Exception:
         print(f"ChromaDB server unavailable, using PersistentClient at {CHROMA_PERSIST_DIR}")
         chroma_client = chromadb.PersistentClient(path=CHROMA_PERSIST_DIR)

@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { fetchSpeechAudio } from "../utils/api";
 
 let sharedAudio: HTMLAudioElement | null = null;
@@ -24,6 +24,12 @@ export function VoicePlayButton({ text }: VoicePlayButtonProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const mySession = useRef(0);
+
+  useEffect(() => {
+    return () => {
+      stopShared();
+    };
+  }, []);
 
   const onClick = useCallback(async () => {
     setError(null);

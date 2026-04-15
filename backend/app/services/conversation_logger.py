@@ -9,6 +9,7 @@
   logs/events/2026-03-21.jsonl         — системные события (startup, errors, telegram)
 """
 
+import asyncio
 import json
 import logging
 from datetime import datetime
@@ -43,11 +44,19 @@ class ConversationLogger:
     def _append(self, category: str, data: dict):
         data["timestamp"] = datetime.now().isoformat()
         path = self._today_file(category)
+
+        def _write():
+            try:
+                with open(path, "a", encoding="utf-8") as f:
+                    f.write(json.dumps(data, ensure_ascii=False) + "\n")
+            except Exception as e:
+                logger.error("Failed to write log to %s: %s", path, e)
+
         try:
-            with open(path, "a", encoding="utf-8") as f:
-                f.write(json.dumps(data, ensure_ascii=False) + "\n")
-        except Exception as e:
-            logger.error("Failed to write log to %s: %s", path, e)
+            loop = asyncio.get_running_loop()
+            loop.run_in_executor(None, _write)
+        except RuntimeError:
+            _write()
 
     def log_conversation(
         self,

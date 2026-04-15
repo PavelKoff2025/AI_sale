@@ -20,7 +20,6 @@ logger = logging.getLogger(__name__)
 class GKProjectParser(BaseParser):
     def __init__(self):
         self.visited_urls: set[str] = set()
-        self.base_url = "https://gkproject.ru"
 
     async def parse(self, source_config: dict) -> list[ParsedDocument]:
         urls = source_config.get("urls", [])
@@ -115,8 +114,11 @@ class GKProjectParser(BaseParser):
             "portfolio": self._extract_portfolio,
             "reviews": self._extract_reviews,
             "blog": self._extract_blog,
+            "otoplenie": self._extract_service_landing,
+            "proektirovanie": self._extract_service_landing,
+            "servis": self._extract_service_landing,
         }
-        extractor = extractors.get(category, self._extract_general)
+        extractor = extractors.get(category, self._extract_service_landing)
         return extractor(soup, url)
 
     def _extract_general(
@@ -361,6 +363,40 @@ class GKProjectParser(BaseParser):
             "- Оплата по факту — только после того, как всё понравится"
         )
 
+    def _extract_service_landing(
+        self, soup: BeautifulSoup, url: str
+    ) -> list[ParsedDocument]:
+        """Извлекает контент с лендингов услуг (отопление, проектирование, сервис)."""
+        for tag in soup(["script", "style", "nav", "footer"]):
+            tag.decompose()
+
+        title_tag = soup.find("h1")
+        title = title_tag.get_text(strip=True) if title_tag else "Услуга ГК Проект"
+
+        text_parts = []
+        for el in soup.find_all(["h1", "h2", "h3", "h4", "p", "li", "td", "th"]):
+            text = el.get_text(strip=True)
+            if text and len(text) > 3:
+                text_parts.append(text)
+
+        if not text_parts:
+            return []
+
+        path = urlparse(url).path.strip("/")
+        category = path.split("/")[0] if "/" in path else "services"
+
+        return [ParsedDocument(
+            text="\n".join(text_parts),
+            metadata={
+                "source": "web",
+                "url": url,
+                "title": title,
+                "category": category,
+                "company": "ГК Проект",
+            },
+            source_type="web",
+        )]
+
     def _extract_contacts(
         self, soup: BeautifulSoup, url: str
     ) -> list[ParsedDocument]:
@@ -545,7 +581,8 @@ class GKProjectParser(BaseParser):
                 continue
             if "PAGEN" in full_url:
                 continue
-            if parsed.path.endswith("/") and len(parsed.path) > len(pattern) + 1:
-                links.add(full_url.split("?")[0])
+            clean_path = parsed.path.rstrip("/")
+            if clean_path and len(clean_path) > len(pattern):
+                links.add(full_url.split("?")[0].rstrip("/") + "/")
 
         return sorted(links - self.visited_urls)
