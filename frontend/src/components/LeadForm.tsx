@@ -74,7 +74,7 @@ export function LeadForm({ onClose, sessionId }: LeadFormProps) {
         </p>
         <button
           onClick={onClose}
-          className="mt-6 px-6 py-2.5 text-sm bg-blue-600 text-white rounded-full hover:bg-blue-700 transition-colors font-medium"
+          className="mt-6 px-6 py-2.5 text-sm bg-brand-600 text-white rounded-full hover:bg-brand-700 transition-colors font-medium"
         >
           Вернуться в чат
         </button>
@@ -85,8 +85,8 @@ export function LeadForm({ onClose, sessionId }: LeadFormProps) {
   return (
     <div className="flex-1 flex flex-col p-4">
       <div className="mb-4">
-        <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mb-3">
-          <svg className="w-6 h-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <div className="w-12 h-12 bg-brand-50 rounded-full flex items-center justify-center mb-3">
+          <svg className="w-6 h-6 text-brand-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
           </svg>
         </div>
@@ -102,7 +102,7 @@ export function LeadForm({ onClose, sessionId }: LeadFormProps) {
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="Иван Петров"
-            className="w-full px-3 py-2.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+            className="w-full px-3 py-2.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
             autoFocus
           />
         </div>
@@ -113,7 +113,7 @@ export function LeadForm({ onClose, sessionId }: LeadFormProps) {
             value={phone}
             onChange={(e) => handlePhoneChange(e.target.value)}
             placeholder="+7 999 123-45-67"
-            className="w-full px-3 py-2.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+            className="w-full px-3 py-2.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
           />
         </div>
       </div>
@@ -122,7 +122,7 @@ export function LeadForm({ onClose, sessionId }: LeadFormProps) {
         <button
           onClick={handleSubmit}
           disabled={!canSubmit || status === "sending"}
-          className="w-full py-2.5 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed font-medium"
+          className="w-full py-2.5 text-sm bg-brand-600 text-white rounded-lg hover:bg-brand-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed font-medium"
         >
           {status === "sending" ? (
             <span className="flex items-center justify-center gap-2">

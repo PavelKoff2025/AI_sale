@@ -81,7 +81,7 @@ export function InputBar({ onSend, isLoading, onLeadClick }: InputBarProps) {
           onKeyDown={handleKeyDown}
           placeholder={defaultConfig.placeholder}
           disabled={isLoading || voiceBusy}
-          className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-full focus:outline-none focus:border-blue-500 disabled:opacity-50"
+          className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-full focus:outline-none focus:border-brand-500 disabled:opacity-50"
           aria-label="Сообщение"
         />
         {isSecureContext ? (
@@ -131,7 +131,7 @@ export function InputBar({ onSend, isLoading, onLeadClick }: InputBarProps) {
         <button
           onClick={handleSend}
           disabled={isLoading || !input.trim() || voiceBusy}
-          className="w-9 h-9 flex items-center justify-center bg-blue-600 text-white rounded-full hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
+          className="w-9 h-9 flex items-center justify-center bg-brand-600 text-white rounded-full hover:bg-brand-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
           aria-label="Отправить"
         >
           <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -150,7 +150,7 @@ export function InputBar({ onSend, isLoading, onLeadClick }: InputBarProps) {
       )}
       <button
         onClick={onLeadClick}
-        className="w-full py-1.5 text-xs text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-colors font-medium"
+        className="w-full py-1.5 text-xs text-brand-600 hover:text-brand-800 hover:bg-brand-50 rounded-lg transition-colors font-medium"
       >
         📞 Оставить заявку — перезвоним за 5 минут
       </button>

@@ -7,7 +7,7 @@ export function ChatBubble({ isOpen, onClick }: ChatBubbleProps) {
   return (
     <button
       onClick={onClick}
-      className="w-14 h-14 rounded-full bg-blue-600 text-white shadow-lg hover:bg-blue-700 transition-all duration-200 flex items-center justify-center hover:scale-105"
+      className="w-14 h-14 rounded-full bg-brand-600 text-white shadow-lg hover:bg-brand-700 transition-all duration-200 flex items-center justify-center hover:scale-105"
       aria-label={isOpen ? "Закрыть чат" : "Открыть чат"}
     >
       {isOpen ? (

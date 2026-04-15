@@ -19,7 +19,7 @@ export function QuickReplies({ onSelect, onLeadClick, visible }: QuickRepliesPro
     <div className="px-3 pb-2 flex flex-wrap gap-1.5">
       <button
         onClick={onLeadClick}
-        className="px-3 py-1.5 text-xs bg-blue-600 text-white rounded-full hover:bg-blue-700 transition-colors whitespace-nowrap font-medium"
+        className="px-3 py-1.5 text-xs bg-brand-600 text-white rounded-full hover:bg-brand-700 transition-colors whitespace-nowrap font-medium"
       >
         📞 Оставить заявку
       </button>
@@ -27,7 +27,7 @@ export function QuickReplies({ onSelect, onLeadClick, visible }: QuickRepliesPro
         <button
           key={text}
           onClick={() => onSelect(text)}
-          className="px-3 py-1.5 text-xs bg-blue-50 text-blue-700 rounded-full border border-blue-200 hover:bg-blue-100 transition-colors whitespace-nowrap"
+          className="px-3 py-1.5 text-xs bg-brand-50 text-brand-600 rounded-full border border-brand-200 hover:bg-brand-100 transition-colors whitespace-nowrap"
         >
           {text}
         </button>

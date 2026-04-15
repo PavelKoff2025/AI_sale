@@ -7,14 +7,14 @@ interface HeaderProps {
 
 export function Header({ onClose, onLeadClick }: HeaderProps) {
   return (
-    <div className="bg-blue-600 text-white px-4 py-3 flex items-center justify-between">
+    <div className="bg-brand-600 text-white px-4 py-3 flex items-center justify-between">
       <div className="flex items-center gap-3">
-        <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-xs font-bold">
+        <div className="w-8 h-8 bg-brand-500 rounded-full flex items-center justify-center text-xs font-bold">
           ГК
         </div>
         <div>
           <h3 className="font-semibold text-sm">{defaultConfig.title}</h3>
-          <p className="text-xs text-blue-200">{defaultConfig.subtitle}</p>
+          <p className="text-xs text-brand-200">{defaultConfig.subtitle}</p>
         </div>
       </div>
       <div className="flex items-center gap-1.5">
@@ -32,7 +32,7 @@ export function Header({ onClose, onLeadClick }: HeaderProps) {
         )}
         <button
           onClick={onClose}
-          className="p-1.5 hover:bg-blue-700 rounded transition-colors"
+          className="p-1.5 hover:bg-brand-700 rounded transition-colors"
           aria-label="Закрыть чат"
         >
           <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
