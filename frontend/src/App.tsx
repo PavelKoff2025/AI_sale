@@ -86,8 +86,11 @@ export default function App() {
       {/* NAV */}
       <nav className="sticky top-0 z-40 bg-white/95 backdrop-blur border-b border-gray-100 shadow-sm">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-          <a href="https://gkproject.ru" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2">
+          <a href="https://gkproject.ru" target="_blank" rel="noopener noreferrer" className="flex items-center gap-3">
             <img src="/logo-gk.png" alt="ГК Проект" className="h-11 w-auto" />
+            <span className="text-brand-600 font-semibold text-sm sm:text-base tracking-wide uppercase hidden sm:inline">
+              Инженерно-строительное бюро
+            </span>
           </a>
           <div className="flex items-center gap-4 sm:gap-6">
             <a href="https://gkproject.ru" target="_blank" rel="noopener noreferrer" className="text-sm text-gray-500 hover:text-brand-600 transition-colors hidden md:inline">
