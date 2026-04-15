@@ -23,30 +23,52 @@ export function useVoiceRecorder(onTranscript: (text: string) => void) {
   const mediaRef = useRef<MediaRecorder | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const chunksRef = useRef<BlobPart[]>([]);
+  const onTranscriptRef = useRef(onTranscript);
+
+  useEffect(() => {
+    onTranscriptRef.current = onTranscript;
+  }, [onTranscript]);
 
   const cleanupStream = useCallback(() => {
     streamRef.current?.getTracks().forEach((t) => t.stop());
     streamRef.current = null;
+    mediaRef.current = null;
   }, []);
 
-  const stopRecording = useCallback(async () => {
-    const mr = mediaRef.current;
-    if (!mr || mr.state === "inactive") return;
-    mr.stop();
-    mediaRef.current = null;
+  const processBlob = useCallback(async (blob: Blob) => {
+    if (blob.size < 200) {
+      setState("idle");
+      return;
+    }
+    setState("processing");
+    try {
+      const text = await transcribeVoice(blob);
+      const trimmed = text.trim();
+      if (trimmed) {
+        onTranscriptRef.current(trimmed);
+      } else {
+        setVoiceError("Речь не распознана, попробуйте ещё раз");
+      }
+    } catch (e) {
+      setVoiceError(e instanceof Error ? e.message : "Не удалось распознать речь");
+    } finally {
+      setState("idle");
+    }
   }, []);
 
   const startRecording = useCallback(async () => {
     setVoiceError(null);
+    setState("idle");
+
     if (typeof window !== "undefined" && !window.isSecureContext) {
       return;
     }
     if (!navigator.mediaDevices?.getUserMedia) {
       setVoiceError("Микрофон не поддерживается в этом браузере");
-      setState("error");
       return;
     }
     try {
+      cleanupStream();
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       streamRef.current = stream;
       chunksRef.current = [];
@@ -62,30 +84,16 @@ export function useVoiceRecorder(onTranscript: (text: string) => void) {
 
       mr.onerror = () => {
         setVoiceError("Ошибка записи");
-        setState("error");
+        setState("idle");
         cleanupStream();
       };
 
-      mr.onstop = async () => {
+      mr.onstop = () => {
         cleanupStream();
         const type = mr.mimeType || "audio/webm";
         const blob = new Blob(chunksRef.current, { type });
         chunksRef.current = [];
-        if (blob.size < 200) {
-          setState("idle");
-          return;
-        }
-        setState("processing");
-        try {
-          const text = await transcribeVoice(blob);
-          const trimmed = text.trim();
-          if (trimmed) onTranscript(trimmed);
-        } catch (e) {
-          setVoiceError(e instanceof Error ? e.message : "Не удалось распознать речь");
-          setState("error");
-          return;
-        }
-        setState("idle");
+        processBlob(blob);
       };
 
       mr.start(200);
@@ -96,10 +104,17 @@ export function useVoiceRecorder(onTranscript: (text: string) => void) {
           ? "Разрешите доступ к микрофону"
           : "Не удалось включить микрофон";
       setVoiceError(msg);
-      setState("error");
+      setState("idle");
       cleanupStream();
     }
-  }, [cleanupStream, onTranscript]);
+  }, [cleanupStream, processBlob]);
+
+  const stopRecording = useCallback(() => {
+    const mr = mediaRef.current;
+    if (mr && mr.state !== "inactive") {
+      mr.stop();
+    }
+  }, []);
 
   useEffect(() => {
     return () => {
@@ -114,14 +129,10 @@ export function useVoiceRecorder(onTranscript: (text: string) => void) {
 
   const toggleRecording = useCallback(async () => {
     if (state === "recording") {
-      await stopRecording();
+      stopRecording();
       return;
     }
     if (state === "processing") return;
-    if (state === "error") {
-      setState("idle");
-      setVoiceError(null);
-    }
     await startRecording();
   }, [state, startRecording, stopRecording]);
 
