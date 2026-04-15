@@ -1,3 +1,4 @@
+import { useState, useCallback } from "react";
 import { ChatWidget } from "./components/ChatWidget";
 
 function isEmbedMode(): boolean {
@@ -73,6 +74,9 @@ const STATS = [
 ];
 
 export default function App() {
+  const [chatOpen, setChatOpen] = useState(false);
+  const openChat = useCallback(() => setChatOpen(true), []);
+
   if (isEmbedMode()) {
     return <ChatWidget />;
   }
@@ -113,22 +117,15 @@ export default function App() {
             Котельные, отопление, водоснабжение, электрика, канализация.
             Проектирование и монтаж под ключ в Москве и области.
           </p>
-          <div className="flex flex-col sm:flex-row gap-3">
-            <a
-              href="https://gkproject.ru/contacts/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center justify-center px-6 py-3 bg-accent-400 hover:bg-accent-500 text-white font-semibold rounded-lg transition-colors text-sm shadow-lg shadow-accent-400/30"
-            >
-              Рассчитать монтаж
-            </a>
-            <a
-              href="tel:+74959087474"
-              className="inline-flex items-center justify-center px-6 py-3 bg-white/10 hover:bg-white/20 text-white font-medium rounded-lg transition-colors text-sm border border-white/20"
-            >
-              📞 +7 495 908-74-74
-            </a>
-          </div>
+          <button
+            onClick={openChat}
+            className="inline-flex items-center justify-center gap-2 px-8 py-3.5 bg-accent-400 hover:bg-accent-500 text-white font-semibold rounded-lg transition-colors text-sm shadow-lg shadow-accent-400/30"
+          >
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+            </svg>
+            Задать вопрос
+          </button>
         </div>
       </section>
 
@@ -277,7 +274,7 @@ export default function App() {
         </div>
       </footer>
 
-      <ChatWidget />
+      <ChatWidget externalOpen={chatOpen} onOpenChange={setChatOpen} />
     </div>
   );
 }
