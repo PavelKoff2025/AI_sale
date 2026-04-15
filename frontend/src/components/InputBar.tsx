@@ -57,7 +57,7 @@ export function InputBar({ onSend, isLoading, onLeadClick }: InputBarProps) {
     }
   };
 
-  const micDisabled = isLoading || voiceBusy;
+  const micDisabled = voiceBusy;
 
   return (
     <div className="border-t border-gray-200 px-3 py-2 space-y-2">
