@@ -18,18 +18,27 @@ QUALIFICATION_PROMPT = """\
 Проанализируй диалог между AI-консультантом и потенциальным клиентом.
 Извлеки параметры квалификации. Отвечай СТРОГО в формате JSON без пояснений.
 
+КРИТИЧЕСКИ ВАЖНО:
+- Учитывай ТОЛЬКО то, что ЯВНО сказал или подтвердил КЛИЕНТ (роль «Клиент» в тексте ниже).
+- НЕ приписывай клиенту факты из ответов консультанта, примерам из базы знаний и гипотетическим фразам («если у вас дом…»).
+- Если клиент пишет, что дома ещё нет, только планирует стройку, «просто интересуюсь», стройка осенью/в будущем — warm_contour = "no" или "unknown", НИКОГДА "yes".
+- warm_contour = "yes" ТОЛЬКО если клиент прямо сказал, что коробка/дом уже есть, стройка на стадии отделки/готов, можно монтировать инженерку.
+
 Параметры:
-1. warm_contour — есть ли у клиента построенный «тёплый контур» дома (коробка, крыша, окна)
-2. budget_ok — готов ли обсуждать бюджет на инженерные системы от 1,8 млн руб.
-3. meeting_ready — готов ли к встрече (онлайн/офлайн) в ближайшие 5 рабочих дней
+1. warm_contour — построен ли «тёплый контур» (коробка дома готова под инженерные системы)
+2. budget_ok — готов ли обсуждать бюджет на инженерные системы от ~1,8 млн руб. (yes только если клиент явно готов к такому порядку сумм или уже обсуждал бюджет)
+3. meeting_ready — готов ли к встрече/выезду в ближайшие 5 рабочих дней (yes только если явно согласился на скорую встречу)
 
-Для каждого параметра укажи:
-- status: "yes" | "no" | "unknown" (unknown — если в диалоге не обсуждалось)
-- detail: краткое пояснение (1 предложение) на русском
+Для каждого параметра:
+- status: "yes" | "no" | "unknown"
+- detail: одно короткое предложение на русском, строго по фактам из реплик КЛИЕНТА
 
-Также определи:
-- lead_temperature: "hot" (все 3 = yes), "warm" (2 из 3 = yes), "cold" (1 или 0 = yes)
-- summary: краткое резюме потребности клиента (1-2 предложения) на русском
+lead_temperature (пересчитай по правилу, не выдумывай):
+- "hot" — ровно три параметра со status "yes"
+- "warm" — ровно два параметра со status "yes"
+- "cold" — ноль или один параметр со status "yes" (или если клиент на ранней стадии без дома)
+
+summary: 1–2 предложения, без противоречий с полями выше; только потребность клиента по его словам.
 
 Формат ответа (только JSON):
 {
@@ -68,6 +77,7 @@ class QualificationService:
             )
 
             result = self._parse_response(response.content)
+            result = self._sanitize_qualification(result, history)
             yes_count = sum(
                 1
                 for key in ("warm_contour", "budget_ok", "meeting_ready")
@@ -90,6 +100,55 @@ class QualificationService:
         except Exception as e:
             logger.error("Qualification analysis failed: %s", e)
             return dict(DEFAULT_QUALIFICATION)
+
+    def _client_text(self, history: list[dict]) -> str:
+        parts = []
+        for msg in history[-20:]:
+            if msg.get("role") == "user":
+                parts.append(str(msg.get("content", "")))
+        return " ".join(parts).lower()
+
+    def _sanitize_qualification(self, result: dict, history: list[dict]) -> dict:
+        """Исправляет типичные галлюцинации LLM: «тёплый контур» при отсутствии дома у клиента."""
+        client = self._client_text(history)
+        if not client.strip():
+            return result
+
+        no_house_markers = (
+            "дома нет",
+            "нет дома",
+            "дома ещё нет",
+            "ещё нет дома",
+            "еще нет дома",
+            "дома пока нет",
+            "просто интересуюсь",
+            "только интересуюсь",
+            "планирую стройку",
+            "стройка к осени",
+            "пока только собираю",
+            "пока только",
+            "будущего дома",
+            "дом ещё не",
+            "дом еще не",
+            "нет ещё дома",
+        )
+        has_no_house_hint = any(m in client for m in no_house_markers)
+
+        wc = result.get("warm_contour") or {}
+        if wc.get("status") == "yes" and has_no_house_hint:
+            result["warm_contour"] = {
+                "status": "no",
+                "detail": "Клиент указывал, что дома ещё нет или стройка только в планах — тёплый контур не готов.",
+            }
+            logger.info("Qualification sanitize: warm_contour yes→no (client has no house / early stage)")
+            summ = (result.get("summary") or "").lower()
+            if any(w in summ for w in ("коробк", "тёпл", "тепл", "готов", "уже есть")):
+                result["summary"] = (
+                    "Клиент интересуется инженерными системами; по его словам дома ещё нет "
+                    "или стройка только планируется — нужна консультация по срокам и этапам."
+                )
+
+        return result
 
     def _format_history(self, history: list[dict]) -> str:
         lines = []
