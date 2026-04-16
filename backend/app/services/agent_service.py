@@ -192,7 +192,13 @@ class AgentService:
             url = r.get("metadata", {}).get("url", "")
             text = r.get("text", "")
             score = r.get("score", 0)
-            url_line = f"\nСсылка: {url}" if url else ""
+            source_type = r.get("metadata", {}).get("source_type", "")
+            if url and url != "https://gkproject.ru":
+                url_line = f"\nСсылка: {url}"
+            elif source_type == "internal_document" or not url:
+                url_line = "\nСсылка: НЕТ (внутренний документ компании, не давай ссылку в ответе)"
+            else:
+                url_line = ""
             parts.append(
                 f"[{i}] {title} (категория: {category}, релевантность: {score}):{url_line}\n{text}"
             )
