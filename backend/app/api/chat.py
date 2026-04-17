@@ -3,9 +3,10 @@ import json
 import logging
 import uuid
 
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect
+from fastapi import APIRouter, Depends, WebSocket, WebSocketDisconnect
 from fastapi.responses import StreamingResponse
 
+from app.core.jwt_auth import verify_jwt
 from app.models.chat import ChatRequest, ChatResponse
 from app.services.agent_service import agent_service
 
@@ -23,7 +24,7 @@ def get_active_connections_count() -> int:
 
 
 @router.post("/chat", response_model=ChatResponse)
-async def chat(request: ChatRequest):
+async def chat(request: ChatRequest, _auth: dict = Depends(verify_jwt)):
     if not request.session_id:
         request.session_id = str(uuid.uuid4())
 
@@ -36,7 +37,7 @@ async def chat(request: ChatRequest):
 
 
 @router.post("/chat/stream")
-async def chat_stream(request: ChatRequest):
+async def chat_stream(request: ChatRequest, _auth: dict = Depends(verify_jwt)):
     if not request.session_id:
         request.session_id = str(uuid.uuid4())
 

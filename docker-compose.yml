@@ -32,6 +32,7 @@ services:
       - GOOGLE_SHEETS_CREDENTIALS_FILE=/app/credentials/google_service_account.json
     volumes:
       - ./chroma_data:/app/chroma_data
+      - ./data:/app/data
       - ./logs:/app/logs
       - ./docs:/app/docs:ro
       - ./parsing_agent/data/raw:/app/parsing_raw:ro

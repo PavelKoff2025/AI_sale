@@ -67,6 +67,19 @@ class Settings(BaseSettings):
     session_max_messages: int = 20
     session_ttl_seconds: int = 1800
 
+    # Rate limiting
+    rate_limit_enabled: bool = True
+    rate_limit_rpm: int = 30
+    rate_limit_cleanup_seconds: int = 600
+
+    # JWT
+    jwt_secret: str = ""
+    jwt_algorithm: str = "HS256"
+    jwt_expire_minutes: int = 60
+
+    # Database (SQLite for sessions & leads persistence)
+    database_url: str = "sqlite+aiosqlite:///data/ai_sale.db"
+
     # Google Sheets
     google_sheets_enabled: bool = False
     google_sheets_credentials_file: str = ""

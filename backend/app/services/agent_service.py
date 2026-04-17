@@ -39,8 +39,8 @@ class AgentService:
             cached = _response_cache.get(cache_key)
             if cached is not None:
                 duration_ms = round((time.time() - start) * 1000)
-                session_service.add_message(session_id, "user", message)
-                session_service.add_message(session_id, "assistant", cached["message"])
+                await session_service.add_message(session_id, "user", message)
+                await session_service.add_message(session_id, "assistant", cached["message"])
                 conversation_logger.log_conversation(
                     session_id=session_id,
                     user_message=message,
@@ -78,8 +78,8 @@ class AgentService:
         llm_response = await llm_provider.chat(messages)
         duration_ms = round((time.time() - start) * 1000)
 
-        session_service.add_message(session_id, "user", message)
-        session_service.add_message(session_id, "assistant", llm_response.content)
+        await session_service.add_message(session_id, "user", message)
+        await session_service.add_message(session_id, "assistant", llm_response.content)
 
         sources = [
             Source(
@@ -152,8 +152,8 @@ class AgentService:
 
         duration_ms = round((time.time() - start) * 1000)
 
-        session_service.add_message(session_id, "user", message)
-        session_service.add_message(session_id, "assistant", full_response)
+        await session_service.add_message(session_id, "user", message)
+        await session_service.add_message(session_id, "assistant", full_response)
 
         sources = [
             {

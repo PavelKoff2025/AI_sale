@@ -7,6 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api.router import api_router
 from app.core.config import settings
 from app.core.middleware import RequestLoggingMiddleware
+from app.core.rate_limiter import RateLimitMiddleware
 
 logging.basicConfig(
     level=getattr(logging, settings.log_level),
@@ -16,8 +17,13 @@ logging.basicConfig(
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    from app.core.database import get_db, close_db
     from app.rag.engine import rag_engine
     from app.services.conversation_logger import conversation_logger
+    from app.services.session_service import session_service
+
+    await get_db()
+    await session_service.initialize()
     await rag_engine.initialize()
     stats = await rag_engine.get_collection_stats()
     conversation_logger.log_event("startup", {
@@ -29,6 +35,7 @@ async def lifespan(app: FastAPI):
         "Backend Agent started. Company: %s", settings.company_name
     )
     yield
+    await close_db()
 
 
 app = FastAPI(
@@ -38,6 +45,7 @@ app = FastAPI(
 )
 
 app.add_middleware(RequestLoggingMiddleware)
+app.add_middleware(RateLimitMiddleware)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origins_list,

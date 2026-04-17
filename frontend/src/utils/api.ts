@@ -1,15 +1,50 @@
 import type { ChatRequest, ChatResponse } from "./types";
 import { defaultConfig } from "./config";
 
+let _token: string | null = null;
+let _tokenExpiry = 0;
+
+async function getAuthToken(): Promise<string> {
+  if (_token && Date.now() < _tokenExpiry) return _token;
+
+  try {
+    const res = await fetch(`${defaultConfig.apiUrl}/api/auth/token`, {
+      method: "POST",
+    });
+    if (res.ok) {
+      const data = await res.json();
+      _token = data.access_token;
+      _tokenExpiry = Date.now() + (data.expires_in - 60) * 1000;
+      return _token!;
+    }
+  } catch {
+    /* auth endpoint unavailable — proceed without token */
+  }
+  return "";
+}
+
+async function authHeaders(): Promise<Record<string, string>> {
+  const token = await getAuthToken();
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  if (token) headers["Authorization"] = `Bearer ${token}`;
+  return headers;
+}
+
 export async function transcribeVoice(blob: Blob): Promise<string> {
+  const token = await getAuthToken();
   const fd = new FormData();
   const filename =
     typeof File !== "undefined" && blob instanceof File && blob.name
       ? blob.name
       : "voice.webm";
   fd.append("audio", blob, filename);
+
+  const headers: Record<string, string> = {};
+  if (token) headers["Authorization"] = `Bearer ${token}`;
+
   const response = await fetch(`${defaultConfig.apiUrl}/api/voice/transcribe`, {
     method: "POST",
+    headers,
     body: fd,
   });
   if (!response.ok) {
@@ -28,9 +63,10 @@ export async function transcribeVoice(blob: Blob): Promise<string> {
 }
 
 export async function fetchSpeechAudio(text: string): Promise<Blob> {
+  const headers = await authHeaders();
   const response = await fetch(`${defaultConfig.apiUrl}/api/voice/synthesize`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers,
     body: JSON.stringify({ text }),
   });
   if (!response.ok) {
@@ -47,9 +83,10 @@ export async function fetchSpeechAudio(text: string): Promise<Blob> {
 }
 
 export async function sendMessage(request: ChatRequest): Promise<ChatResponse> {
+  const headers = await authHeaders();
   const response = await fetch(`${defaultConfig.apiUrl}/api/chat`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers,
     body: JSON.stringify(request),
   });
 
@@ -64,9 +101,10 @@ export async function* streamMessage(
   request: ChatRequest,
   signal?: AbortSignal
 ): AsyncGenerator<string> {
+  const headers = await authHeaders();
   const response = await fetch(`${defaultConfig.apiUrl}/api/chat/stream`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers,
     body: JSON.stringify(request),
     signal,
   });

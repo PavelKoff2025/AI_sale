@@ -9,6 +9,7 @@ interface LeadFormProps {
 export function LeadForm({ onClose, sessionId }: LeadFormProps) {
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
+  const [message, setMessage] = useState("");
   const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
 
   const canSubmit = name.trim().length >= 2 && phone.trim().length >= 5;
@@ -45,6 +46,7 @@ export function LeadForm({ onClose, sessionId }: LeadFormProps) {
         body: JSON.stringify({
           name: name.trim(),
           phone: phone.trim(),
+          message: message.trim(),
           source: "chat_widget",
           session_id: sessionId,
         }),
@@ -114,6 +116,16 @@ export function LeadForm({ onClose, sessionId }: LeadFormProps) {
             onChange={(e) => handlePhoneChange(e.target.value)}
             placeholder="+7 999 123-45-67"
             className="w-full px-3 py-2.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
+          />
+        </div>
+        <div>
+          <label className="block text-xs font-medium text-gray-600 mb-1">Комментарий</label>
+          <textarea
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            placeholder="Опишите задачу (необязательно)"
+            rows={2}
+            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 resize-none"
           />
         </div>
       </div>
