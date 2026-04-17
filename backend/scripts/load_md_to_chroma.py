@@ -43,7 +43,7 @@ def main() -> None:
 
     scan_dirs: list[tuple[Path, str, str]] = [
         (Path("/app/docs"), "*", "docs"),
-        (Path("/app/parsing_raw"), "*.md", "parsing_raw"),
+        (Path("/app/parsing_raw"), "**/*.md", "parsing_raw"),
     ]
     all_chunks: list[dict] = []
 
@@ -54,7 +54,14 @@ def main() -> None:
         for filepath in sorted(base_dir.glob(pattern)):
             if filepath.name.startswith(".") or filepath.is_dir() or not filepath.is_file():
                 continue
-            text = filepath.read_text(encoding="utf-8")
+            if filepath.suffix.lower() in (".pdf", ".docx", ".png", ".jpg", ".jpeg", ".gif"):
+                print(f"Skip (binary): {filepath.name}")
+                continue
+            try:
+                text = filepath.read_text(encoding="utf-8")
+            except UnicodeDecodeError:
+                print(f"Skip (encoding error): {filepath.name}")
+                continue
             print(f"Processing [{label}]: {filepath.name} ({len(text)} chars)")
 
             sections = re.split(r"\n(?=#{1,3}\s)", text)
